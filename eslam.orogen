@@ -1,0 +1,66 @@
+name 'eslam'
+version 0.1
+
+using_library 'particle_filter'
+using_library 'envire'
+using_library 'asguard'
+
+import_types_from 'base'
+import_types_from 'asguard/Configuration.hpp'
+
+task_context 'Task' do
+    needs_configuration
+	
+    ##########################
+    # environment parameters
+    ##########################
+
+    property('environment_path', 'string').
+	doc 'path to environment'
+
+    property('environment_debug_path', 'string').
+	doc 'if this property is set, the final environment will be written to the given file path.'
+
+    ##########################
+    # aggregator parameters
+    ##########################
+
+    property('bodystate_period', 'double', 0.01).
+	doc 'Time in s between bodystate readings'
+
+    property('orientation_period', 'double', 0.01).
+	doc 'Time in s between orientation readings'
+
+    property('max_delay', 'double', 0.2).
+	doc 'Time in s the state estimator will wait for expected readings.'
+
+    ##########################
+    # filter parameters
+    ##########################
+
+    property('start_pose', '/wrappers/samples/RigidBodyState').
+	doc 'path to environment'
+
+    ##########################
+    # i/o ports 
+    ##########################
+
+    input_port('bodystate_samples', '/wrappers/BodyState').
+	needs_reliable_connection.
+	doc 'timestamped samples providing the configuration state of the robot.'
+
+    input_port('orientation_samples', '/wrappers/samples/RigidBodyState').
+	needs_reliable_connection.
+	doc 'timestamped samples providing the orientation of the robot.'
+
+    output_port('pose_samples', '/wrappers/samples/RigidBodyState').
+	doc 'timestamped samples of the particle filters pose centroid.'
+end
+
+deployment "eslam_test" do
+    do_not_install
+
+    task("eslam", "Task")
+
+    add_default_logger
+end
