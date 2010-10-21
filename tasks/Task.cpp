@@ -28,17 +28,20 @@ void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 
     _pose_samples.write( rbs );
 
-    wrappers::PoseDistribution pd;
-    pd.time = ts;
-    pd.orientation = orientation;
-    pd.body_state = bs;
-    const std::vector<wrappers::PoseParticle::particle>& particles( filter->getParticles() );
-    std::copy( 
-	    particles.begin(), 
-	    particles.end(), 
-	    std::back_inserter(pd.particles) );
+    if( _pose_distribution.connected() )
+    {
+	wrappers::PoseDistribution pd;
+	pd.time = ts;
+	pd.orientation = orientation;
+	pd.body_state = bs;
+	const std::vector<wrappers::PoseParticle::particle>& particles( filter->getParticles() );
+	std::copy( 
+		particles.begin(), 
+		particles.end(), 
+		std::back_inserter(pd.particles) );
 
-    _pose_distribution.write( pd );
+	_pose_distribution.write( pd );
+    }
 }
 
 void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& rbs )
