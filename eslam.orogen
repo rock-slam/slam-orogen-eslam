@@ -3,6 +3,7 @@ version 0.1
 
 using_library 'particle_filter'
 using_library 'envire'
+using_library 'enview'
 using_library 'asguard'
 
 import_types_from 'base'
@@ -60,6 +61,8 @@ task_context 'Task' do
 
     output_port('pose_distribution', '/wrappers/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
+
+    port_driven 'orientation_samples'
 end
 
 deployment "eslam_test" do
@@ -67,5 +70,10 @@ deployment "eslam_test" do
 
     task("eslam", "Task")
 
+    add_default_logger
+end
+
+deployment "eslam" do
+    task("eslam", "Task")
     add_default_logger
 end

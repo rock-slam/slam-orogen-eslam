@@ -10,11 +10,15 @@
 
 #include <StreamAligner.hpp>
 
+#ifdef DEBUG_VIZ
+#include <enview/EslamWidget.hpp>
+#include <enview/QtThreadedWidget.hpp>
+#endif
+
 namespace RTT
 {
     class NonPeriodicActivity;
 }
-
 
 namespace eslam {
     class Task : public TaskBase
@@ -23,6 +27,10 @@ namespace eslam {
 	friend class TaskBase;
 
     protected:
+#ifdef DEBUG_VIZ
+	QtThreadedWidget<enview::EslamWidget> viz;
+#endif
+
 	boost::shared_ptr<asguard::Configuration> config;
 	boost::shared_ptr<eslam::EmbodiedSlamFilter> filter;
 	boost::shared_ptr<envire::Environment> env;

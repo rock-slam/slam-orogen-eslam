@@ -41,6 +41,9 @@ void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 		std::back_inserter(pd.particles) );
 
 	_pose_distribution.write( pd );
+#ifdef DEBUG_VIZ
+	viz.widget->setPoseDistribution( pd );
+#endif
     }
 }
 
@@ -66,6 +69,15 @@ bool Task::configureHook()
 	env = boost::shared_ptr<envire::Environment>( new envire::Environment() );
     }
 
+#ifdef DEBUG_VIZ
+    while( !viz.isInitialized() )
+	usleep( 200 );
+	
+    std::cerr << "set environment" << std::endl;
+    viz.widget->setEnvironment( env.get() );
+    std::cerr << "done set environment" << std::endl;
+#endif
+
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
     filter->init( env.get(), pose );
@@ -83,16 +95,23 @@ bool Task::configureHook()
 	   boost::bind( &Task::bodystate_callback, this, _1, _2 ), -1, 
 	   base::Time::fromSeconds( _bodystate_period.value() ), 1 );
 
+    std::cerr << "done configuration" << std::endl;
     return true;
 }
 
 bool Task::startHook()
 {
+    std::cerr << "called start hook" << std::endl;
     return true;
 }
 
 void Task::updateHook()
 {
+    static int idx = 0;
+
+    if( (idx++ % 100) == 0 )
+	std::cerr << "updateHook " << idx << "\r";
+
     wrappers::samples::RigidBodyState orientation_sample;
     while( _orientation_samples.read( orientation_sample ) )
     {
@@ -104,6 +123,8 @@ void Task::updateHook()
     {
 	aggr->push( bodystate_idx, bodystate_sample.time, bodystate_sample );	
     }
+
+    while(aggr->step());
 }
 
 // void Task::errorHook()
