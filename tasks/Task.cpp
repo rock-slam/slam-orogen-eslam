@@ -18,8 +18,17 @@ Task::Task(std::string const& name)
 
 void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 {
+    static Eigen::Quaterniond update_orientation;
+    static asguard::BodyState update_bodystate; 
+
     asguard::BodyState bs( wbs );
-    filter->update( bs, orientation );
+    // record bodystate and orientation when an update 
+    // has occured
+    if( filter->update( bs, orientation ) )
+    {
+	update_orientation = orientation;
+	update_bodystate = bs;
+    }
 
     base::Pose centroid = filter->getCentroid();
 
@@ -32,8 +41,8 @@ void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
     {
 	wrappers::PoseDistribution pd;
 	pd.time = ts;
-	pd.orientation = orientation;
-	pd.body_state = bs;
+	pd.orientation = update_orientation;
+	pd.body_state = update_bodystate;
 	const std::vector<wrappers::PoseParticle::particle>& particles( filter->getParticles() );
 	std::copy( 
 		particles.begin(), 

@@ -44,6 +44,8 @@ struct PoseParticle
     double zSigma;
     bool floating;
     std::vector<ContactPoint> cpoints;
+    wrappers::Vector3 meas_pos;
+    double meas_theta;
     double weight;
 
 #ifndef __orogen
@@ -52,7 +54,8 @@ struct PoseParticle
     PoseParticle() {}
     PoseParticle( const particle& p )
 	: x( p.x.position.x() ), y( p.x.position.y() ), theta( p.x.orientation ),
-	zPos( p.x.zPos ), zSigma( p.x.zSigma ), floating( p.x.floating ), cpoints(p.x.cpoints.begin(), p.x.cpoints.end()),
+	zPos( p.x.zPos ), zSigma( p.x.zSigma ), floating( p.x.floating ), 
+	cpoints(p.x.cpoints.begin(), p.x.cpoints.end()), meas_pos( p.x.meas_pos ), meas_theta( p.x.meas_theta ),
 	weight( p.w )
     {}
 
@@ -65,6 +68,8 @@ struct PoseParticle
 	zSigma = p.x.zSigma;
 	floating = p.x.floating;
 	std::copy( p.x.cpoints.begin(), p.x.cpoints.end(), std::back_inserter( cpoints ) );
+	meas_pos = p.x.meas_pos;
+	meas_theta = p.x.meas_theta;
 	weight = p.w;
 
 	return *this;
@@ -74,6 +79,8 @@ struct PoseParticle
     {
 	eslam::PoseParticle pp( Eigen::Vector2d( x, y ), theta, zPos, zSigma, floating );
 	std::copy( cpoints.begin(), cpoints.end(), std::back_inserter( pp.cpoints ) );
+	pp.meas_pos = meas_pos;
+	pp.meas_theta = meas_theta;
 
 	return particle( pp, weight);
     }
