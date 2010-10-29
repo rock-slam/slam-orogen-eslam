@@ -27,10 +27,6 @@ namespace eslam {
 	friend class TaskBase;
 
     protected:
-#ifdef DEBUG_VIZ
-	QtThreadedWidget<enview::EslamWidget> viz;
-#endif
-
 	boost::shared_ptr<asguard::Configuration> config;
 	boost::shared_ptr<eslam::EmbodiedSlamFilter> filter;
 	boost::shared_ptr<envire::Environment> env;
@@ -45,6 +41,9 @@ namespace eslam {
 
 	Eigen::Quaterniond orientation;
 
+#ifdef DEBUG_VIZ
+	QtThreadedWidget<enview::EslamWidget> viz;
+#endif
     public:
         Task(std::string const& name = "eslam::Task");
 
