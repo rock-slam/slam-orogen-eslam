@@ -1,9 +1,9 @@
 #! /usr/bin/env ruby
 
-require 'log_replay'
+require 'orocos'
+require 'orocos/log'
 require 'widget_grid'
 
-require 'orocos'
 include Orocos
 
 if ARGV.size < 2 then 
@@ -21,17 +21,18 @@ Orocos::Process.spawn('eslam_test') do |p|
 
     Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
-    log_replay = Pocosim::LogReplay.new( ['test.0.log', 'gps.0.log', 'xsens_imu.0.log', 'lowlevel.1.log'].map!{|x| File.join(ARGV[0], x)} )
+    log_replay = Orocos::Log::Replay.open( ['hokuyo.0.log','test.0.log', 'gps.0.log', 'xsens_imu.0.log', 'lowlevel.1.log'].map!{|x| File.join(ARGV[0], x)} )
+    log_replay.hokuyo.scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 100 ) 
     log_replay.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.odometry.bodystate_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 100 )
 
     #start_pos = log_replay.gps.position_samples.stream.first[2]
     #start_pos.orientation = log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
 
-    start_pos = log_replay.pose_estimator.pose_samples.stream[10][2]
+    #start_pos = log_replay.pose_estimator.pose_samples.stream[10][2]
 
-    eslam.environment_path = ARGV[1]
-    eslam.start_pose = start_pos
+    #eslam.environment_path = ARGV[1]
+    #eslam.start_pose = start_pos
     eslam.configure
     eslam.start
 

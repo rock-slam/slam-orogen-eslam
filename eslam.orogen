@@ -27,6 +27,8 @@ task_context 'Task' do
     ##########################
     # aggregator parameters
     ##########################
+    property('scan_period', 'double', 0.02).
+	doc 'Time in s between laserscan readings'
 
     property('bodystate_period', 'double', 0.01).
 	doc 'Time in s between bodystate readings'
@@ -48,6 +50,10 @@ task_context 'Task' do
     # i/o ports 
     ##########################
 
+    input_port('scan_samples', '/base/samples/LaserScan').
+	needs_reliable_connection.
+	doc 'timestamped laser scans'
+
     input_port('bodystate_samples', '/wrappers/BodyState').
 	needs_reliable_connection.
 	doc 'timestamped samples providing the configuration state of the robot.'
@@ -62,7 +68,7 @@ task_context 'Task' do
     output_port('pose_distribution', '/wrappers/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
 
-    port_driven 'orientation_samples'
+    port_driven
 end
 
 deployment "eslam_test" do

@@ -18,10 +18,22 @@ Task::Task(std::string const& name)
 
 void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 {
+    body_state = wbs;
+}
+
+void Task::scan_callback( base::Time ts, const base::samples::LaserScan& scan )
+{
+    this->scan = scan;
+}
+
+void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& rbs )
+{
     static Eigen::Quaterniond update_orientation;
     static asguard::BodyState update_bodystate; 
 
-    asguard::BodyState bs( wbs );
+    Eigen::Quaterniond orientation(rbs.orientation);
+
+    asguard::BodyState bs( body_state );
     // record bodystate and orientation when an update 
     // has occured
     if( filter->update( bs, orientation ) )
@@ -32,10 +44,10 @@ void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 
     base::Pose centroid = filter->getCentroid();
 
-    base::samples::RigidBodyState rbs;
-    rbs.setPose( centroid );
+    base::samples::RigidBodyState res_rbs;
+    res_rbs.setPose( centroid );
 
-    _pose_samples.write( rbs );
+    _pose_samples.write( res_rbs );
 
     if( _pose_distribution.connected() )
     {
@@ -52,14 +64,42 @@ void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
 	_pose_distribution.write( pd );
 #ifdef DEBUG_VIZ
 	viz.widget->setPoseDistribution( pd );
+	viz.widget->setReferencePose( centroid, bs );
 #endif
+    }
+
+    if( useScans )
+    {
+	envire::FrameNode *scanFrame = new envire::FrameNode( centroid.toTransform() * config->laser2Body );
+	env->addChild( env->getRootNode(), scanFrame );
+	envire::LaserScan *scanNode = new envire::LaserScan();
+	scanNode->addScanLine( 0, scan );
+	env->setFrameNode( scanNode, scanFrame );
+
+	envire::TriMesh *pcNode = new envire::TriMesh();
+	env->setFrameNode( pcNode, scanFrame );
+
+	envire::ScanMeshing *smOp = new envire::ScanMeshing();
+	env->attachItem( smOp );
+	smOp->addInput( scanNode );
+	smOp->addOutput( pcNode );
+
+	smOp->updateAll();
+	// we can remove the scanmeshing operator and the laserscan now
+	env->detachItem( smOp ); 
+	delete smOp;
+	env->detachItem( scanNode ); 
+	delete scanNode;
+	
+	envire::MLSProjection *mlsOp = new envire::MLSProjection();
+	env->attachItem( mlsOp );
+	mlsOp->addInput( pcNode );
+	mlsOp->addOutput( mlsGrid );
+
+	mlsOp->updateAll();
     }
 }
 
-void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& rbs )
-{
-    orientation = Eigen::Quaterniond(rbs.orientation);
-}
 
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Task.hpp for more detailed
@@ -72,45 +112,55 @@ bool Task::configureHook()
     {
 	envire::Serialization so;
 	env = boost::shared_ptr<envire::Environment>( so.unserialize( _environment_path.value() ) );
+	useScans = false;
     }
     else
     {
 	env = boost::shared_ptr<envire::Environment>( new envire::Environment() );
+	const double size = 20;
+	const double resolution = 0.05;
+	mlsGrid = new envire::MultiLevelSurfaceGrid( size/resolution, size/resolution, resolution, resolution );
+	envire::FrameNode *gridNode = new envire::FrameNode( Eigen::Transform3d( Eigen::Translation3d( -size/2.0, -size/2.0, 0 ) ) ); 
+	env->addChild( env->getRootNode(), gridNode );
+	env->setFrameNode( mlsGrid, gridNode );
+	useScans = true;
     }
 
 #ifdef DEBUG_VIZ
     while( !viz.isInitialized() )
 	usleep( 200 );
 	
-    std::cerr << "set environment" << std::endl;
     viz.widget->setEnvironment( env.get() );
-    std::cerr << "done set environment" << std::endl;
 #endif
 
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
     filter->init( env.get(), pose );
 
+    std::cerr << "initialized" << std::endl;
+
     // setup the aggregator with the timeout value provided by the module
     aggr->setTimeout( base::Time::fromSeconds( _max_delay.value() ) );
 
+    // a priority value of 1 will make sure, the orientation callback is call second
+    // for a timestamp with the same value 
     orientation_idx = aggr->registerStream<wrappers::samples::RigidBodyState>(
 	   boost::bind( &Task::orientation_callback, this, _1, _2 ), -1,
-	   base::Time::fromSeconds( _orientation_period.value() ) );
+	   base::Time::fromSeconds( _orientation_period.value() ), 1 );
 
-    // a priority value of 1 will make sure, the bodystate callback is call second
-    // for a timestamp with the same value 
     bodystate_idx = aggr->registerStream<wrappers::BodyState>(
 	   boost::bind( &Task::bodystate_callback, this, _1, _2 ), -1, 
-	   base::Time::fromSeconds( _bodystate_period.value() ), 1 );
+	   base::Time::fromSeconds( _bodystate_period.value() ) );
 
-    std::cerr << "done configuration" << std::endl;
+    scan_idx = aggr->registerStream<base::samples::LaserScan>(
+	   boost::bind( &Task::scan_callback, this, _1, _2 ), -1, 
+	   base::Time::fromSeconds( _scan_period.value() ) );
+
     return true;
 }
 
 bool Task::startHook()
 {
-    std::cerr << "called start hook" << std::endl;
     return true;
 }
 
@@ -131,6 +181,12 @@ void Task::updateHook()
     while( _bodystate_samples.read( bodystate_sample ) )
     {
 	aggr->push( bodystate_idx, bodystate_sample.time, bodystate_sample );	
+    }
+
+    base::samples::LaserScan scan_sample;
+    while( _scan_samples.read( scan_sample ) )
+    {
+	aggr->push( scan_idx, scan_sample.time, scan_sample );	
     }
 
     while(aggr->step());

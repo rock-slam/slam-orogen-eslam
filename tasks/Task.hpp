@@ -7,6 +7,8 @@
 #include <asguard/EmbodiedSlamFilter.hpp>
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
+#include <envire/operators/MLSProjection.hpp>
+#include <envire/operators/ScanMeshing.hpp>
 
 #include <StreamAligner.hpp>
 
@@ -14,6 +16,7 @@
 #include <enview/EslamWidget.hpp>
 #include <enview/QtThreadedWidget.hpp>
 #endif
+
 
 namespace RTT
 {
@@ -35,11 +38,17 @@ namespace eslam {
 
 	int bodystate_idx;
 	int orientation_idx;
+	int scan_idx;
     
 	void bodystate_callback( base::Time ts, const wrappers::BodyState& body_state );
 	void orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& orientation );
+	void scan_callback( base::Time ts, const base::samples::LaserScan& scan );
 
-	Eigen::Quaterniond orientation;
+	asguard::BodyState body_state;
+	base::samples::LaserScan scan;
+
+	bool useScans;
+	envire::MultiLevelSurfaceGrid *mlsGrid;
 
 #ifdef DEBUG_VIZ
 	QtThreadedWidget<enview::EslamWidget> viz;
