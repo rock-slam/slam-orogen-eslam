@@ -11,5 +11,6 @@
 
   <depend package="slam/particle_filter"/>
   <depend package="slam/envire"/>
+  <depend package="robots/asguard-tools"/>
   <rosdep name="eigen2" />
 </package>
