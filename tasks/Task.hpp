@@ -4,11 +4,9 @@
 #include "eslam/TaskBase.hpp"
 
 #include <boost/shared_ptr.hpp>
-#include <asguard/EmbodiedSlamFilter.hpp>
+#include <particle_filter/EmbodiedSlamFilter.hpp>
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
-#include <envire/operators/MLSProjection.hpp>
-#include <envire/operators/ScanMeshing.hpp>
 
 #include <StreamAligner.hpp>
 
@@ -48,7 +46,6 @@ namespace eslam {
 	base::samples::LaserScan scan;
 
 	bool useScans;
-	envire::MultiLevelSurfaceGrid *mlsGrid;
 
 #ifdef DEBUG_VIZ
 	QtThreadedWidget<enview::EslamWidget> viz;

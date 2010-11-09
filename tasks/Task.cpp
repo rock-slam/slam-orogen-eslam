@@ -34,9 +34,18 @@ void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBo
     Eigen::Quaterniond orientation(rbs.orientation);
 
     asguard::BodyState bs( body_state );
+
+    bool updated = false;
+
+    if( useScans )
+	updated = filter->update( bs, orientation, scan );
+    else 
+	updated = filter->update( bs, orientation );
+
     // record bodystate and orientation when an update 
-    // has occured
-    if( filter->update( bs, orientation ) )
+    // has occured. this is mainly for visualizing purposes,
+    // so to capture the updated state.
+    if( updated )
     {
 	update_orientation = orientation;
 	update_bodystate = bs;
@@ -67,37 +76,6 @@ void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBo
 	viz.widget->setReferencePose( centroid, bs );
 #endif
     }
-
-    if( useScans )
-    {
-	envire::FrameNode *scanFrame = new envire::FrameNode( centroid.toTransform() * config->laser2Body );
-	env->addChild( env->getRootNode(), scanFrame );
-	envire::LaserScan *scanNode = new envire::LaserScan();
-	scanNode->addScanLine( 0, scan );
-	env->setFrameNode( scanNode, scanFrame );
-
-	envire::TriMesh *pcNode = new envire::TriMesh();
-	env->setFrameNode( pcNode, scanFrame );
-
-	envire::ScanMeshing *smOp = new envire::ScanMeshing();
-	env->attachItem( smOp );
-	smOp->addInput( scanNode );
-	smOp->addOutput( pcNode );
-
-	smOp->updateAll();
-	// we can remove the scanmeshing operator and the laserscan now
-	env->detachItem( smOp ); 
-	delete smOp;
-	env->detachItem( scanNode ); 
-	delete scanNode;
-	
-	envire::MLSProjection *mlsOp = new envire::MLSProjection();
-	env->attachItem( mlsOp );
-	mlsOp->addInput( pcNode );
-	mlsOp->addOutput( mlsGrid );
-
-	mlsOp->updateAll();
-    }
 }
 
 
@@ -117,12 +95,6 @@ bool Task::configureHook()
     else
     {
 	env = boost::shared_ptr<envire::Environment>( new envire::Environment() );
-	const double size = 20;
-	const double resolution = 0.05;
-	mlsGrid = new envire::MultiLevelSurfaceGrid( size/resolution, size/resolution, resolution, resolution );
-	envire::FrameNode *gridNode = new envire::FrameNode( Eigen::Transform3d( Eigen::Translation3d( -size/2.0, -size/2.0, 0 ) ) ); 
-	env->addChild( env->getRootNode(), gridNode );
-	env->setFrameNode( mlsGrid, gridNode );
 	useScans = true;
     }
 
