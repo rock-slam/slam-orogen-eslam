@@ -1,15 +1,13 @@
 name 'eslam'
 version 0.1
 
-using_library 'particle_filter'
+using_library 'eslam'
 using_library 'envire'
-using_library 'enview'
 using_library 'asguard'
 
 import_types_from 'base'
-import_types_from 'asguard/Configuration.hpp'
-
-import_types_from 'ParticleWrapper.hpp'
+import_types_from "asguard/BodyState.hpp"
+import_types_from "eslam/PoseParticle.hpp"
 
 task_context 'Task' do
     needs_configuration
@@ -43,7 +41,7 @@ task_context 'Task' do
     # filter parameters
     ##########################
 
-    property('start_pose', '/wrappers/samples/RigidBodyState').
+    property('start_pose', '/base/samples/RigidBodyState').
 	doc 'path to environment'
 
     ##########################
@@ -54,18 +52,18 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'timestamped laser scans'
 
-    input_port('bodystate_samples', '/wrappers/BodyState').
+    input_port('bodystate_samples', '/asguard/BodyState').
 	needs_reliable_connection.
 	doc 'timestamped samples providing the configuration state of the robot.'
 
-    input_port('orientation_samples', '/wrappers/samples/RigidBodyState').
+    input_port('orientation_samples', '/base/samples/RigidBodyState').
 	needs_reliable_connection.
 	doc 'timestamped samples providing the orientation of the robot.'
 
-    output_port('pose_samples', '/wrappers/samples/RigidBodyState').
+    output_port('pose_samples', '/base/samples/RigidBodyState').
 	doc 'timestamped samples of the particle filters pose centroid.'
 
-    output_port('pose_distribution', '/wrappers/PoseDistribution').
+    output_port('pose_distribution', '/eslam/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
 
     port_driven

@@ -1,13 +1,6 @@
 #include "Task.hpp"
 
-#include <rtt/NonPeriodicActivity.hpp>
-
-#include <ParticleWrapper.hpp>
-
 using namespace eslam;
-
-RTT::NonPeriodicActivity* Task::getNonPeriodicActivity()
-{ return dynamic_cast< RTT::NonPeriodicActivity* >(getActivity().get()); }
 
 Task::Task(std::string const& name)
     : TaskBase(name), config( new asguard::Configuration() ), 
@@ -16,7 +9,7 @@ Task::Task(std::string const& name)
 {
 }
 
-void Task::bodystate_callback( base::Time ts, const wrappers::BodyState& wbs )
+void Task::bodystate_callback( base::Time ts, const asguard::BodyState& wbs )
 {
     body_state = wbs;
 }
@@ -26,7 +19,7 @@ void Task::scan_callback( base::Time ts, const base::samples::LaserScan& scan )
     this->scan = scan;
 }
 
-void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& rbs )
+void Task::orientation_callback( base::Time ts, const base::samples::RigidBodyState& rbs )
 {
     static Eigen::Quaterniond update_orientation;
     static asguard::BodyState update_bodystate; 
@@ -60,11 +53,11 @@ void Task::orientation_callback( base::Time ts, const wrappers::samples::RigidBo
 
     if( _pose_distribution.connected() )
     {
-	wrappers::PoseDistribution pd;
+	eslam::PoseDistribution pd;
 	pd.time = ts;
 	pd.orientation = update_orientation;
-	pd.body_state = update_bodystate;
-	const std::vector<wrappers::PoseParticle::particle>& particles( filter->getParticles() );
+	pd.bodyState = update_bodystate;
+	const std::vector<eslam::PoseEstimator::Particle>& particles( filter->getParticles() );
 	std::copy( 
 		particles.begin(), 
 		particles.end(), 
@@ -116,11 +109,11 @@ bool Task::configureHook()
 
     // a priority value of 1 will make sure, the orientation callback is call second
     // for a timestamp with the same value 
-    orientation_idx = aggr->registerStream<wrappers::samples::RigidBodyState>(
+    orientation_idx = aggr->registerStream<base::samples::RigidBodyState>(
 	   boost::bind( &Task::orientation_callback, this, _1, _2 ), -1,
 	   base::Time::fromSeconds( _orientation_period.value() ), 1 );
 
-    bodystate_idx = aggr->registerStream<wrappers::BodyState>(
+    bodystate_idx = aggr->registerStream<asguard::BodyState>(
 	   boost::bind( &Task::bodystate_callback, this, _1, _2 ), -1, 
 	   base::Time::fromSeconds( _bodystate_period.value() ) );
 
@@ -143,13 +136,13 @@ void Task::updateHook()
     if( (idx++ % 100) == 0 )
 	std::cerr << "updateHook " << idx << "\r";
 
-    wrappers::samples::RigidBodyState orientation_sample;
+    base::samples::RigidBodyState orientation_sample;
     while( _orientation_samples.read( orientation_sample ) )
     {
 	aggr->push( orientation_idx, orientation_sample.time, orientation_sample );	
     }
     
-    wrappers::BodyState bodystate_sample;
+    asguard::BodyState bodystate_sample;
     while( _bodystate_samples.read( bodystate_sample ) )
     {
 	aggr->push( bodystate_idx, bodystate_sample.time, bodystate_sample );	

@@ -4,7 +4,7 @@
 #include "eslam/TaskBase.hpp"
 
 #include <boost/shared_ptr.hpp>
-#include <particle_filter/EmbodiedSlamFilter.hpp>
+#include <eslam/EmbodiedSlamFilter.hpp>
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
 
@@ -14,12 +14,6 @@
 #include <enview/EslamWidget.hpp>
 #include <enview/QtThreadedWidget.hpp>
 #endif
-
-
-namespace RTT
-{
-    class NonPeriodicActivity;
-}
 
 namespace eslam {
     class Task : public TaskBase
@@ -38,8 +32,8 @@ namespace eslam {
 	int orientation_idx;
 	int scan_idx;
     
-	void bodystate_callback( base::Time ts, const wrappers::BodyState& body_state );
-	void orientation_callback( base::Time ts, const wrappers::samples::RigidBodyState& orientation );
+	void bodystate_callback( base::Time ts, const asguard::BodyState& body_state );
+	void orientation_callback( base::Time ts, const base::samples::RigidBodyState& orientation );
 	void scan_callback( base::Time ts, const base::samples::LaserScan& scan );
 
 	asguard::BodyState body_state;
@@ -52,8 +46,6 @@ namespace eslam {
 #endif
     public:
         Task(std::string const& name = "eslam::Task");
-
-        RTT::NonPeriodicActivity* getNonPeriodicActivity();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the

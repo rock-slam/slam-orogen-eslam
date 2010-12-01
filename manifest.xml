@@ -9,8 +9,7 @@
   </copyright>
   <license>LGPL v2 or later</license>
 
-  <depend package="slam/particle_filter"/>
+  <depend package="base/types"/>
+  <depend package="asguard/eslam"/>
   <depend package="slam/envire"/>
-  <depend package="robots/asguard-tools"/>
-  <rosdep name="eigen2" />
 </package>
