@@ -92,9 +92,7 @@ bool Task::configureHook()
     }
 
 #ifdef DEBUG_VIZ
-    while( !viz.isInitialized() )
-	usleep( 200 );
-	
+    viz.start();
     viz.widget->setEnvironment( env.get() );
 #endif
 

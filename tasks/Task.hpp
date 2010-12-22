@@ -11,8 +11,8 @@
 #include <StreamAligner.hpp>
 
 #ifdef DEBUG_VIZ
-#include <enview/EslamWidget.hpp>
-#include <enview/QtThreadedWidget.hpp>
+#include <vizkit/EslamWidget.hpp>
+#include <vizkit/QtThreadedWidget.hpp>
 #endif
 
 namespace eslam {
@@ -42,7 +42,7 @@ namespace eslam {
 	bool useScans;
 
 #ifdef DEBUG_VIZ
-	QtThreadedWidget<enview::EslamWidget> viz;
+	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
     public:
         Task(std::string const& name = "eslam::Task");

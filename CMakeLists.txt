@@ -9,9 +9,12 @@ option( DEBUG_VIZ "Switch on visualization of environment (only for DEBUG)." )
 if( DEBUG_VIZ )
     message( "Using debug visualization." )
     add_definitions(-DDEBUG_VIZ)
-    find_package(Qt4 REQUIRED)
-    set(QT_USE_OPENGL TRUE)
-    include(${QT_USE_FILE})
+
+    pkg_check_modules(ESLAMVIZ "eslam-viz")
+    message(vizdirs ${ESLAMVIZ_LIBRARIES})
+
+    include_directories(${ESLAMVIZ_INCLUDE_DIRS})
+    link_directories(${ESLAMVIZ_LIBRARY_DIRS})
 endif( DEBUG_VIZ )
 
 find_package(Eigen2 REQUIRED)
