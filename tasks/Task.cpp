@@ -135,19 +135,19 @@ void Task::updateHook()
 	std::cerr << "updateHook " << idx << "\r";
 
     base::samples::RigidBodyState orientation_sample;
-    while( _orientation_samples.read( orientation_sample ) )
+    while( _orientation_samples.read( orientation_sample ) == RTT::NewData )
     {
 	aggr->push( orientation_idx, orientation_sample.time, orientation_sample );	
     }
     
     asguard::BodyState bodystate_sample;
-    while( _bodystate_samples.read( bodystate_sample ) )
+    while( _bodystate_samples.read( bodystate_sample ) == RTT::NewData )
     {
 	aggr->push( bodystate_idx, bodystate_sample.time, bodystate_sample );	
     }
 
     base::samples::LaserScan scan_sample;
-    while( _scan_samples.read( scan_sample ) )
+    while( _scan_samples.read( scan_sample ) == RTT::NewData )
     {
 	aggr->push( scan_idx, scan_sample.time, scan_sample );	
     }
