@@ -1,9 +1,9 @@
 #! /usr/bin/env ruby
 
-require 'log_replay'
 #require 'widget_grid'
 
 require 'orocos'
+require 'orocos/log'
 include Orocos
 
 # will generate the output of the odometry module
@@ -24,12 +24,12 @@ Orocos.run 'lowlevel' do |p|
     odometry.configure
     odometry.start
 
-    Orocos.log_all_ports( {:log_dir => ARGV[0]} )
-
-    log_replay = Pocosim::LogReplay.new( ['lowlevel.0.log', 'xsens_imu.0.log', 'sysmon.0.log'].map!{|x| File.join(ARGV[0], x)} )
+    log_replay = Log::Replay.open( ARGV[0] )
     log_replay.hbridge.status.connect_to( odometry.hbridge_samples, :type => :buffer, :size => 1000 )
     log_replay.xsens_imu.orientation_samples.connect_to( odometry.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.sysmon.system_status.connect_to( odometry.systemstate_samples, :type => :buffer, :size => 100 )
+
+    Orocos.log_all_ports( {:tasks => 'odometry', :log_dir => ARGV[0]} )
 
     log_replay.align()
 

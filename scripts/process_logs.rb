@@ -21,7 +21,7 @@ Orocos::Process.spawn('eslam_test') do |p|
 
     Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
-    log_replay = Orocos::Log::Replay.open( ['hokuyo.0.log','test.0.log', 'gps.0.log', 'xsens_imu.0.log', 'lowlevel.1.log'].map!{|x| File.join(ARGV[0], x)} )
+    log_replay = Orocos::Log::Replay.open( ['hokuyo.0.log','lowlevel.1.log'].map!{|x| File.join(ARGV[0], x)} )
     log_replay.hokuyo.scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 100 ) 
     log_replay.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.odometry.bodystate_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 100 )
@@ -36,11 +36,12 @@ Orocos::Process.spawn('eslam_test') do |p|
     eslam.configure
     eslam.start
 
+    log_replay.align( :use_sample_time )
+
     widget_grid = WidgetGrid.new
     widget_grid.control( log_replay )
     widget_grid.run
 
-    #log_replay.align()
     #log_replay.run(false)
 end
 
