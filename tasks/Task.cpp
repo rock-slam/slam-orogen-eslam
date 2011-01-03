@@ -51,7 +51,9 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 
     _pose_samples.write( res_rbs );
 
+#ifndef DEBUG_VIZ
     if( _pose_distribution.connected() )
+#endif
     {
 	eslam::PoseDistribution pd;
 	pd.time = ts;
@@ -63,7 +65,9 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		particles.end(), 
 		std::back_inserter(pd.particles) );
 
-	_pose_distribution.write( pd );
+	if( _pose_distribution.connected() )
+	    _pose_distribution.write( pd );
+
 #ifdef DEBUG_VIZ
 	viz.widget->setPoseDistribution( pd );
 	viz.widget->setReferencePose( centroid, bs );
