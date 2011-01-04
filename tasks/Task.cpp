@@ -5,22 +5,29 @@ using namespace eslam;
 Task::Task(std::string const& name)
     : TaskBase(name), config( new asguard::Configuration() ), 
     filter( new eslam::EmbodiedSlamFilter(*config) ),
-    aggr( new aggregator::StreamAligner() )
+    aggr( new aggregator::StreamAligner() ),
+    body_state_valid( false ),
+    scan_valid( false )
 {
 }
 
 void Task::bodystate_callback( base::Time ts, const asguard::BodyState& wbs )
 {
     body_state = wbs;
+    body_state_valid = true;
 }
 
 void Task::scan_callback( base::Time ts, const base::samples::LaserScan& scan )
 {
     this->scan = scan;
+    scan_valid = true;
 }
 
 void Task::orientation_callback( base::Time ts, const base::samples::RigidBodyState& rbs )
 {
+    if( !body_state_valid )
+	return;
+
     static Eigen::Quaterniond update_orientation;
     static asguard::BodyState update_bodystate; 
 
@@ -30,7 +37,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 
     bool updated = false;
 
-    if( useScans )
+    if( useScans && scan_valid )
 	updated = filter->update( bs, orientation, scan );
     else 
 	updated = filter->update( bs, orientation );
@@ -71,6 +78,38 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 #ifdef DEBUG_VIZ
 	viz.widget->setPoseDistribution( pd );
 	viz.widget->setReferencePose( centroid, bs );
+
+	if( updated )
+	{
+	    // get map with maximum weight
+	    envire::MultiLevelSurfaceGrid* grid;
+	    double weight = -1;
+	    std::vector<eslam::PoseEstimator::Particle> &particles( filter->getParticles() );
+	    for( std::vector<eslam::PoseEstimator::Particle>::iterator it = particles.begin(); it != particles.end(); it++ )
+	    {
+		if( it->weight > weight )
+		{
+		    grid = it->grid.get();
+		    weight = it->weight;
+		}
+	    }
+
+	    std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
+	    if( !vizGrids.empty() )
+	    {
+		envire::MultiLevelSurfaceGrid *vizGrid = vizGrids.front();
+		vizGrid->operator=( *grid );
+		vizEnv->itemModified( vizGrid );
+	    }
+	    else
+	    {
+		envire::MultiLevelSurfaceGrid *vizGrid = grid->clone();
+		vizEnv->attachItem( vizGrid );
+		envire::FrameNode *fn = new envire::FrameNode( grid->getFrameNode()->getTransform() );
+		vizEnv->addChild( vizEnv->getRootNode(), fn );
+		vizGrid->setFrameNode( fn );
+	    }
+	}
 #endif
     }
 }
@@ -97,12 +136,14 @@ bool Task::configureHook()
 
 #ifdef DEBUG_VIZ
     viz.start();
-    viz.widget->setEnvironment( env.get() );
+
+    vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
+    viz.widget->setEnvironment( vizEnv.get() );
 #endif
 
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
-    filter->init( env.get(), pose );
+    filter->init( env.get(), pose, false );
 
     std::cerr << "initialized" << std::endl;
 

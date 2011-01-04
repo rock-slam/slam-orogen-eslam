@@ -39,9 +39,13 @@ namespace eslam {
 	asguard::BodyState body_state;
 	base::samples::LaserScan scan;
 
+	bool body_state_valid;
+	bool scan_valid;
+
 	bool useScans;
 
 #ifdef DEBUG_VIZ
+	boost::shared_ptr<envire::Environment> vizEnv;
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
     public:
