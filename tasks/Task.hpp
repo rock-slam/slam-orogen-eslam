@@ -22,7 +22,6 @@ namespace eslam {
 	friend class TaskBase;
 
     protected:
-	boost::shared_ptr<asguard::Configuration> config;
 	boost::shared_ptr<eslam::EmbodiedSlamFilter> filter;
 	boost::shared_ptr<envire::Environment> env;
 

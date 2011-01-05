@@ -3,8 +3,7 @@
 using namespace eslam;
 
 Task::Task(std::string const& name)
-    : TaskBase(name), config( new asguard::Configuration() ), 
-    filter( new eslam::EmbodiedSlamFilter(*config) ),
+    : TaskBase(name), 
     aggr( new aggregator::StreamAligner() ),
     body_state_valid( false ),
     scan_valid( false )
@@ -72,6 +71,8 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		particles.end(), 
 		std::back_inserter(pd.particles) );
 
+	std::cout << pd.particles.size() << std::endl;
+
 	if( _pose_distribution.connected() )
 	    _pose_distribution.write( pd );
 
@@ -82,7 +83,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	if( updated )
 	{
 	    // get map with maximum weight
-	    envire::MultiLevelSurfaceGrid* grid;
+	    envire::MultiLevelSurfaceGrid* grid = 0;
 	    double weight = -1;
 	    std::vector<eslam::PoseEstimator::Particle> &particles( filter->getParticles() );
 	    for( std::vector<eslam::PoseEstimator::Particle>::iterator it = particles.begin(); it != particles.end(); it++ )
@@ -94,21 +95,26 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		}
 	    }
 
-	    std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
-	    if( !vizGrids.empty() )
+	    if( grid )
 	    {
-		envire::MultiLevelSurfaceGrid *vizGrid = vizGrids.front();
-		vizGrid->operator=( *grid );
-		vizEnv->itemModified( vizGrid );
+		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
+		if( !vizGrids.empty() )
+		{
+		    envire::MultiLevelSurfaceGrid *vizGrid = vizGrids.front();
+		    vizGrid->operator=( *grid );
+		    vizEnv->itemModified( vizGrid );
+		}
+		else
+		{
+		    envire::MultiLevelSurfaceGrid *vizGrid = grid->clone();
+		    vizEnv->attachItem( vizGrid );
+		    envire::FrameNode *fn = new envire::FrameNode( grid->getFrameNode()->getTransform() );
+		    vizEnv->addChild( vizEnv->getRootNode(), fn );
+		    vizGrid->setFrameNode( fn );
+		}
 	    }
 	    else
-	    {
-		envire::MultiLevelSurfaceGrid *vizGrid = grid->clone();
-		vizEnv->attachItem( vizGrid );
-		envire::FrameNode *fn = new envire::FrameNode( grid->getFrameNode()->getTransform() );
-		vizEnv->addChild( vizEnv->getRootNode(), fn );
-		vizGrid->setFrameNode( fn );
-	    }
+		std::cerr << "WARN: could not find grid with largest weight." << std::endl;
 	}
 #endif
     }
@@ -121,6 +127,12 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 
 bool Task::configureHook()
 {
+    // initialize the filter object with the current configuration
+    filter = boost::shared_ptr<eslam::EmbodiedSlamFilter>( new eslam::EmbodiedSlamFilter( 
+		_asguard_config.get(),
+		_odometry_config.get(), 
+		_eslam_config.get() ) ); 
+
     // load an environment if path is specified
     if( !_environment_path.value().empty() )
     {

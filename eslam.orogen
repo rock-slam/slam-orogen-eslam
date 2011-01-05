@@ -7,10 +7,24 @@ using_library 'asguard'
 
 import_types_from 'base'
 import_types_from "asguard/BodyState.hpp"
+import_types_from "asguard/Configuration.hpp"
+import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
 task_context 'Task' do
     needs_configuration
+    ##########################
+    # configuration options 
+    ##########################
+
+    property('eslam_config', '/eslam/Configuration').
+	doc 'Configuration options for the eslam filter.'
+
+    property('odometry_config', '/asguard/odometry/Configuration').
+	doc 'Configuration options for the asguard odometry.'
+
+    property('asguard_config', '/asguard/Configuration').
+	doc 'Configuration options for the asguard robot.'
 	
     ##########################
     # environment parameters
