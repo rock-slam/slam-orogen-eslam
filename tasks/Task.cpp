@@ -71,8 +71,6 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		particles.end(), 
 		std::back_inserter(pd.particles) );
 
-	std::cout << pd.particles.size() << std::endl;
-
 	if( _pose_distribution.connected() )
 	    _pose_distribution.write( pd );
 
