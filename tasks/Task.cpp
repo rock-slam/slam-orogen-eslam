@@ -4,10 +4,21 @@ using namespace eslam;
 
 Task::Task(std::string const& name)
     : TaskBase(name), 
-    aggr( new aggregator::StreamAligner() ),
+    aggr( new aggregator::PullStreamAligner() ),
     body_state_valid( false ),
     scan_valid( false )
 {
+}
+
+template <class T>
+bool readPortSample( RTT::InputPort<T> *port, base::Time& ts, T& data)
+{
+    if( port->read( data ) == RTT::NewData )
+    {
+	ts = data.time;
+	return true;
+    }
+    return false;
 }
 
 void Task::bodystate_callback( base::Time ts, const asguard::BodyState& wbs )
@@ -163,14 +174,17 @@ bool Task::configureHook()
     // a priority value of 1 will make sure, the orientation callback is call second
     // for a timestamp with the same value 
     orientation_idx = aggr->registerStream<base::samples::RigidBodyState>(
+	   boost::bind( readPortSample<base::samples::RigidBodyState>, &_orientation_samples, _1, _2 ),
 	   boost::bind( &Task::orientation_callback, this, _1, _2 ), -1,
 	   base::Time::fromSeconds( _orientation_period.value() ), 1 );
 
     bodystate_idx = aggr->registerStream<asguard::BodyState>(
+	   boost::bind( readPortSample<asguard::BodyState>, &_bodystate_samples, _1, _2 ),
 	   boost::bind( &Task::bodystate_callback, this, _1, _2 ), -1, 
 	   base::Time::fromSeconds( _bodystate_period.value() ) );
 
     scan_idx = aggr->registerStream<base::samples::LaserScan>(
+	   boost::bind( readPortSample<base::samples::LaserScan>, &_scan_samples, _1, _2 ),
 	   boost::bind( &Task::scan_callback, this, _1, _2 ), -1, 
 	   base::Time::fromSeconds( _scan_period.value() ) );
 
@@ -184,30 +198,8 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    static int idx = 0;
-
-    if( (idx++ % 100) == 0 )
-	std::cerr << "updateHook " << idx << "\r";
-
-    base::samples::RigidBodyState orientation_sample;
-    while( _orientation_samples.read( orientation_sample ) == RTT::NewData )
-    {
-	aggr->push( orientation_idx, orientation_sample.time, orientation_sample );	
-    }
-    
-    asguard::BodyState bodystate_sample;
-    while( _bodystate_samples.read( bodystate_sample ) == RTT::NewData )
-    {
-	aggr->push( bodystate_idx, bodystate_sample.time, bodystate_sample );	
-    }
-
-    base::samples::LaserScan scan_sample;
-    while( _scan_samples.read( scan_sample ) == RTT::NewData )
-    {
-	aggr->push( scan_idx, scan_sample.time, scan_sample );	
-    }
-
-    while(aggr->step());
+    while(aggr->pull()) 
+	while(aggr->step());
 }
 
 // void Task::errorHook()

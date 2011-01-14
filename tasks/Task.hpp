@@ -8,7 +8,7 @@
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
 
-#include <StreamAligner.hpp>
+#include <PullStreamAligner.hpp>
 
 #ifdef DEBUG_VIZ
 #include <vizkit/EslamWidget.hpp>
@@ -25,7 +25,7 @@ namespace eslam {
 	boost::shared_ptr<eslam::EmbodiedSlamFilter> filter;
 	boost::shared_ptr<envire::Environment> env;
 
-	boost::shared_ptr<aggregator::StreamAligner> aggr;
+	boost::shared_ptr<aggregator::PullStreamAligner> aggr;
 
 	int bodystate_idx;
 	int orientation_idx;
