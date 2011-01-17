@@ -11,6 +11,8 @@ import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
+import_types_from "StreamAlignerStatus.hpp"
+
 task_context 'Task' do
     needs_configuration
     ##########################
@@ -50,6 +52,9 @@ task_context 'Task' do
 
     property('max_delay', 'double', 0.2).
 	doc 'Time in s the state estimator will wait for expected readings.'
+
+    output_port('streamaligner_status', '/aggregator/StreamAlignerStatus').
+	doc 'Provides debug information on the state of the StreamAligner'
 
     ##########################
     # filter parameters

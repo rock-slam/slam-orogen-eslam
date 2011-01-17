@@ -1,8 +1,5 @@
 #! /usr/bin/env ruby
-
-require 'orocos'
-require 'orocos/log'
-require 'widget_grid'
+require 'vizkit'
 
 include Orocos
 
@@ -26,22 +23,23 @@ Orocos::Process.spawn('eslam_test') do |p|
     log_replay.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.odometry.bodystate_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 100 )
 
-    #start_pos = log_replay.gps.position_samples.stream.first[2]
-    #start_pos.orientation = log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
-
-    #start_pos = log_replay.pose_estimator.pose_samples.stream[10][2]
-
-    #eslam.environment_path = ARGV[1]
-    #eslam.start_pose = start_pos
     eslam.configure
     eslam.start
 
+    threshold = 0.2
+    status_reader = eslam.streamaligner_status.reader
+
     log_replay.align( :use_sample_time )
+    log_replay.time_sync do |current_time, actual_time_delta, required_time_delta|
+	module_time = status_reader.read 
+	if module_time.latest_time + threshold < current_time 
+	    0.1 
+	else
+	    0
+	end
+    end
 
-    widget_grid = WidgetGrid.new
-    widget_grid.control( log_replay )
-    widget_grid.run
-
-    #log_replay.run(false)
+    Vizkit.control log_replay
+    Vizkit.exec
 end
 

@@ -200,6 +200,8 @@ void Task::updateHook()
 {
     while(aggr->pull()) 
 	while(aggr->step());
+
+    _streamaligner_status.write( aggr->getStatus() );
 }
 
 // void Task::errorHook()
