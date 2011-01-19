@@ -1,4 +1,5 @@
 #include "Task.hpp"
+#include <algorithm>
 
 using namespace eslam;
 
@@ -76,7 +77,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	pd.time = ts;
 	pd.orientation = update_orientation;
 	pd.bodyState = update_bodystate;
-	const std::vector<eslam::PoseEstimator::Particle>& particles( filter->getParticles() );
+	std::vector<eslam::PoseEstimator::Particle>& particles( filter->getParticles() );
 	std::copy( 
 		particles.begin(), 
 		particles.end(), 
@@ -88,33 +89,35 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 #ifdef DEBUG_VIZ
 	viz.widget->setPoseDistribution( pd );
 	viz.widget->setReferencePose( centroid, bs );
+	const int inspect_particle_idx = viz.widget->getInspectedParticleIndex();
 
 	if( updated )
 	{
-	    // get map with maximum weight
-	    envire::MultiLevelSurfaceGrid* grid = 0;
-	    double weight = -1;
-	    std::vector<eslam::PoseEstimator::Particle> &particles( filter->getParticles() );
-	    for( std::vector<eslam::PoseEstimator::Particle>::iterator it = particles.begin(); it != particles.end(); it++ )
-	    {
-		if( it->weight > weight )
-		{
-		    grid = it->grid.get();
-		    weight = it->weight;
-		}
-	    }
+	    typedef eslam::PoseEstimator::Particle Particle;
+	    std::vector<eslam::PoseEstimator::Particle>::iterator el =
+		std::max_element( particles.begin(), particles.end(), 
+			boost::bind( &Particle::weight, _1 ) < boost::bind( &Particle::weight, _2 )  );
+	    envire::MultiLevelSurfaceGrid* grid;
+	    //const size_t best_particle_idx = el - particles.begin(); 
+	    if( inspect_particle_idx >= 0 )
+		grid = particles[inspect_particle_idx].grid.get();
+	    else
+		grid = el->grid.get();
 
 	    if( grid )
 	    {
 		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
 		if( !vizGrids.empty() )
 		{
+		    // copy the selected grid to be visualized
+		    // this is actually quite inefficient, but works for now
 		    envire::MultiLevelSurfaceGrid *vizGrid = vizGrids.front();
 		    vizGrid->operator=( *grid );
 		    vizEnv->itemModified( vizGrid );
 		}
 		else
 		{
+		    // create a new mls map in the viz environment
 		    envire::MultiLevelSurfaceGrid *vizGrid = grid->clone();
 		    vizEnv->attachItem( vizGrid );
 		    envire::FrameNode *fn = new envire::FrameNode( grid->getFrameNode()->getTransform() );
