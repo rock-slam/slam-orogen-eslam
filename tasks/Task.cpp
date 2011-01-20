@@ -204,7 +204,11 @@ void Task::updateHook()
     while(aggr->pull()) 
 	while(aggr->step());
 
-    _streamaligner_status.write( aggr->getStatus() );
+    // only write output if the aggregator actually had some data
+    // this is slightly implicit, and could be made more explicit in
+    // the aggregator
+    if( aggr->getLatestTime() > base::Time() )
+	_streamaligner_status.write( aggr->getStatus() );
 }
 
 // void Task::errorHook()

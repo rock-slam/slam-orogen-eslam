@@ -29,14 +29,19 @@ Orocos::Process.spawn('eslam_test') do |p|
     threshold = 0.2
     status_reader = eslam.streamaligner_status.reader
 
+    latest_time = nil
     log_replay.align( :use_sample_time )
     log_replay.time_sync do |current_time, actual_time_delta, required_time_delta|
-	module_time = status_reader.read 
-	if module_time.latest_time + threshold < current_time 
-	    0.1 
-	else
-	    0
-	end
+ 	module_time = status_reader.read_new
+ 	if !module_time.nil?
+ 	    latest_time = module_time.latest_time
+ 	end
+ 
+ 	if latest_time and latest_time + threshold < current_time
+ 	    0.1
+ 	else
+ 	    0
+ 	end
     end
 
     Vizkit.control log_replay
