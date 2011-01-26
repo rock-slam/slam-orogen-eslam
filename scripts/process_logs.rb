@@ -23,6 +23,11 @@ Orocos::Process.spawn('eslam_test') do |p|
     log_replay.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.odometry.bodystate_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 100 )
 
+    eslam.eslam_config.measurementThreshold.distance = 0.02
+    eslam.eslam_config.measurementThreshold.angle = 5.0 * Math::PI/180.0
+    eslam.eslam_config.mappingThreshold.distance = 0.02
+    eslam.eslam_config.mappingThreshold.angle = 5.0 * Math::PI/180.0
+
     eslam.configure
     eslam.start
 
