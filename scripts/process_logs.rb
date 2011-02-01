@@ -3,8 +3,8 @@ require 'vizkit'
 
 include Orocos
 
-if ARGV.size < 2 then 
-    puts "usage: process_logs.rb log_dir environment_path"
+if ARGV.size < 1 then 
+    puts "usage: process_logs.rb log_dir [environment_path]"
     exit
 end
 
