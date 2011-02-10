@@ -97,33 +97,46 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	    std::vector<eslam::PoseEstimator::Particle>::iterator el =
 		std::max_element( particles.begin(), particles.end(), 
 			boost::bind( &Particle::weight, _1 ) < boost::bind( &Particle::weight, _2 )  );
-	    envire::MultiLevelSurfaceGrid* grid;
+	    envire::MLSMap* map;
 	    //const size_t best_particle_idx = el - particles.begin(); 
 	    if( inspect_particle_idx >= 0 )
-		grid = particles[inspect_particle_idx].grid.get();
+		map = particles[inspect_particle_idx].grid.getMap();
 	    else
-		grid = el->grid.get();
+		map = el->grid.getMap();
 
-	    if( grid )
+	    if( map )
 	    {
+		// remove all previous maps
 		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
-		if( !vizGrids.empty() )
+		for( std::vector<envire::MultiLevelSurfaceGrid*>::iterator it = vizGrids.begin();
+			it != vizGrids.end(); it++ )
 		{
-		    // copy the selected grid to be visualized
-		    // this is actually quite inefficient, but works for now
-		    envire::MultiLevelSurfaceGrid *vizGrid = vizGrids.front();
-		    vizGrid->operator=( *grid );
-		    vizEnv->itemModified( vizGrid );
+		    vizEnv->detachItem( *it );
+		    std::cerr << "detach item " << std::endl;
 		}
-		else
+		
+		// replicate framenode
+		envire::FrameNode* fn = new envire::FrameNode( 
+			env->relativeTransform( map->getFrameNode(), map->getEnvironment()->getRootNode() ) );
+		vizEnv->addChild( vizEnv->getRootNode(), fn );
+
+		std::cerr << "addframenode to root" << std::endl;
+
+		// copy grids from the best map to the visualization environment
+		for( std::vector<envire::MultiLevelSurfaceGrid::Ptr>::iterator it = map->grids.begin();
+			it != map->grids.end(); it++ )
 		{
+		    std::cerr << "start add map" << std::endl;
 		    // create a new mls map in the viz environment
-		    envire::MultiLevelSurfaceGrid *vizGrid = grid->clone();
-		    vizEnv->attachItem( vizGrid );
-		    envire::FrameNode *fn = new envire::FrameNode( grid->getFrameNode()->getTransform() );
-		    vizEnv->addChild( vizEnv->getRootNode(), fn );
-		    vizGrid->setFrameNode( fn );
+		    envire::MultiLevelSurfaceGrid *vizGrid = (*it)->clone();
+		    envire::FrameNode *mapNode = (*it)->getFrameNode()->clone();
+		    vizEnv->addChild( fn, mapNode );
+		    vizGrid->setFrameNode( mapNode );
+		    fn = mapNode;
+
+		    std::cerr << "add map" << std::endl;
 		}
+		std::cerr << "end viz" << std::endl;
 	    }
 	    else
 		std::cerr << "WARN: could not find grid with largest weight." << std::endl;
