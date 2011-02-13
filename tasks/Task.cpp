@@ -87,9 +87,9 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	    _pose_distribution.write( pd );
 
 #ifdef DEBUG_VIZ
-	viz.widget->setPoseDistribution( pd );
-	viz.widget->setReferencePose( centroid, bs );
-	const int inspect_particle_idx = viz.widget->getInspectedParticleIndex();
+	viz.getWidget()->setPoseDistribution( pd );
+	viz.getWidget()->setReferencePose( centroid, bs );
+	const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
 
 	if( updated )
 	{
@@ -162,7 +162,7 @@ bool Task::configureHook()
     viz.start();
 
     vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
-    viz.widget->setEnvironment( vizEnv.get() );
+    viz.getWidget()->setEnvironment( vizEnv.get() );
 #endif
 
     // init the filter
