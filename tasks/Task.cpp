@@ -116,8 +116,9 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		    envire::FrameNode *fn = (*it)->getFrameNode();
 		    while( fn && fn->isAttached() && !fn->isRoot() )
 		    {
-			fn = fn->getParent();
+			envire::FrameNode* parent = fn->getParent();
 			vizEnv->detachItem( fn );
+			fn = parent;
 		    }
 		    vizEnv->detachItem( *it );
 		}
@@ -141,6 +142,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 
 		envire::GraphViz viz;
 		viz.writeToFile( vizEnv.get(), "/tmp/vizEnv.dot" );
+		viz.writeToFile( env.get(), "/tmp/env.dot" );
 	    }
 	    else
 		std::cerr << "WARN: could not find grid with largest weight." << std::endl;
