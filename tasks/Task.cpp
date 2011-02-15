@@ -106,7 +106,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	    else
 		map = el->grid.getMap();
 
-	    if( map )
+	    if( map && !viz.getWidget()->isDirty() )
 	    {
 		// remove all previous maps
 		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
@@ -140,12 +140,13 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		    fn = mapNode;
 		}
 
+		viz.getWidget()->setDirty();
+		/*
 		envire::GraphViz viz;
 		viz.writeToFile( vizEnv.get(), "/tmp/vizEnv.dot" );
 		viz.writeToFile( env.get(), "/tmp/env.dot" );
+		*/
 	    }
-	    else
-		std::cerr << "WARN: could not find grid with largest weight." << std::endl;
 	}
 #endif
     }
