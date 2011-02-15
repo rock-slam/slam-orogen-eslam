@@ -114,7 +114,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 			it != vizGrids.end(); it++ )
 		{
 		    envire::FrameNode *fn = (*it)->getFrameNode();
-		    while( fn && fn->isAttached() && !fn->isRoot() )
+		    while( fn && fn->isAttached() && (fn != vizEnv->getRootNode()) )
 		    {
 			envire::FrameNode* parent = fn->getParent();
 			vizEnv->detachItem( fn );
