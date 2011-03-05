@@ -25,7 +25,7 @@ Orocos.run 'lowlevel' do |p|
     odometry.start
 
     log_replay = Log::Replay.open( ARGV[0] )
-    log_replay.hbridge.status.connect_to( odometry.hbridge_samples, :type => :buffer, :size => 1000 )
+    log_replay.hbridge.status_motors.connect_to( odometry.hbridge_samples, :type => :buffer, :size => 1000 )
     log_replay.xsens_imu.orientation_samples.connect_to( odometry.orientation_samples, :type => :buffer, :size => 100 )
     log_replay.sysmon.system_status.connect_to( odometry.systemstate_samples, :type => :buffer, :size => 100 )
 
