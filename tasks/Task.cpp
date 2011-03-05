@@ -90,7 +90,11 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 
 #ifdef DEBUG_VIZ
 	viz.getWidget()->setPoseDistribution( pd );
-	viz.getWidget()->setReferencePose( centroid, bs );
+	viz.getWidget()->setBodyState( bs );
+	viz.getWidget()->setCentroidPose( centroid );
+	base::samples::RigidBodyState ref_pose;
+	while( _reference_pose.read( ref_pose ) == RTT::NewData )
+	    viz.getWidget()->setReferencePose( ref_pose.getPose() );
 	const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
 
 	if( updated )

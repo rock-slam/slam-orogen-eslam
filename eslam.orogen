@@ -79,6 +79,10 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'timestamped samples providing the orientation of the robot.'
 
+    input_port('reference_pose', '/base/samples/RigidBodyState').
+	needs_reliable_connection.
+	doc 'you can provide a reference pose here for debug purposes.'
+
     output_port('pose_samples', '/base/samples/RigidBodyState').
 	doc 'timestamped samples of the particle filters pose centroid.'
 
