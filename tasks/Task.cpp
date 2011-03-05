@@ -106,7 +106,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	    else
 		map = el->grid.getMap();
 
-	    if( map && !viz.getWidget()->isDirty() )
+	    if( map && !viz.getWidget()->isDirty() && vizEnv != env )
 	    {
 		// remove all previous maps
 		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
@@ -166,11 +166,14 @@ bool Task::configureHook()
 		_eslam_config.get() ) ); 
 
     // load an environment if path is specified
+    bool useShared = false;
     if( !_environment_path.value().empty() )
     {
+	std::cout << "loading environment: " << _environment_path.value() << std::endl;
 	envire::Serialization so;
 	env = boost::shared_ptr<envire::Environment>( so.unserialize( _environment_path.value() ) );
 	useScans = false;
+	useShared = true;
     }
     else
     {
@@ -181,13 +184,17 @@ bool Task::configureHook()
 #ifdef DEBUG_VIZ
     viz.start();
 
-    vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
+    if( useShared )
+	vizEnv = env;
+    else
+	vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
     viz.getWidget()->setEnvironment( vizEnv.get() );
 #endif
 
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
-    filter->init( env.get(), pose, false );
+    std::cerr << "starting at position " << pose.position.transpose() << std::endl;
+    filter->init( env.get(), pose, useShared );
 
     std::cerr << "initialized" << std::endl;
 
