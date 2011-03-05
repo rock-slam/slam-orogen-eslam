@@ -11,8 +11,7 @@ class Eslam
     end
 
     def start
-	Vizkit.control @log_replay
-	Vizkit.exec
+	@log_replay.run
     end
 
     def configure
@@ -26,9 +25,9 @@ class Eslam
 	config.minEffective = 150
 	@eslam.eslam_config = config
 
-	start_pos = @log_replay.mb500.position_samples.stream.first[2]
-	start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
-	@eslam.start_pose = start_pos
+	@start_pos = @log_replay.mb500.position_samples.stream.first[2]
+	@start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
+	@eslam.start_pose = @start_pos
 
 	@eslam.environment_path = @environment_path if @environment_path 
     end

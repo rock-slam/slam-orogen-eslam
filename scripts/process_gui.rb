@@ -6,6 +6,13 @@ if ARGV.size < 1 then
     exit
 end
 
-eslam = Eslam.new( ARGV[0], ARGV[1] )
+class GuiEslam < Eslam
+    def start
+	Vizkit.control @log_replay
+	Vizkit.exec
+    end
+end
+
+eslam = GuiEslam.new( ARGV[0], ARGV[1] )
 eslam.run
 
