@@ -67,6 +67,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
     base::Pose centroid = filter->getCentroid();
 
     base::samples::RigidBodyState res_rbs;
+    res_rbs.time = ts;
     res_rbs.setPose( centroid );
 
     _pose_samples.write( res_rbs );
