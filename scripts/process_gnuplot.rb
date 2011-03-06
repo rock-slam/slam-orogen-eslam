@@ -1,11 +1,24 @@
 #! /usr/bin/env ruby
 require 'eslam'
 require 'plots'
+require 'optparse'
 
-if ARGV.size < 1 then 
-    puts "usage: process_logs.rb log_dir [environment_path] [output_dir]"
+opts = {}
+p = OptionParser.new do |o|
+    o.banner = "usage: process_gnuplot.rb [options] log_dir"
+    o.on("-e", "--env=PATH", "Path to environment") {|v| opts[:env_dir] = v }
+    o.on("-o", "--out=PATH", "Output directory (will be created)") {|v| opts[:out_dir] = v }
+    o.on("-h", "--help", "Show this message") do
+	puts o
+	exit
+    end
+end
+p.parse!(ARGV)
+if ARGV.empty?
+    puts p 
     exit
 end
+opts[:log_dir] = ARGV[0]
 
 class GpEslam < Eslam
     def configure
@@ -49,6 +62,7 @@ class GpEslam < Eslam
 	# create target directory
 	Dir.mkdir( output_dir ) unless File.exist?( output_dir )
 	@plot.save( File.join( output_dir, "position.gpl" ) )
+	@plot.save_pdf( File.join( output_dir, "position.pdf" ) )
     end
 
     def show()
@@ -57,8 +71,11 @@ class GpEslam < Eslam
 
 end
 
-eslam = GpEslam.new( ARGV[0], ARGV[1] )
+eslam = GpEslam.new( opts[:log_dir], opts[:env_dir] )
 eslam.run
-#eslam.save( ARGV[2] )
-eslam.show
+if opts[:out_dir]
+    eslam.save( opts[:out_dir] )
+else
+    eslam.show
+end
 

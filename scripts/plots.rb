@@ -42,6 +42,14 @@ class PositionPlot
 	    plot( file )
 	end
     end
+
+    def save_pdf( file_name )
+	Gnuplot.open do |gp|
+	    gp << "set terminal pdf\n"
+	    gp << "set out '#{file_name}'\n"
+	    plot( gp )
+	end
+    end
     
     def show
 	Gnuplot.open do |gp|
