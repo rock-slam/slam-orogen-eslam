@@ -57,12 +57,14 @@ class GpEslam < Eslam
 	Vizkit.exec
     end
 
-
     def save( output_dir )
 	# create target directory
 	Dir.mkdir( output_dir ) unless File.exist?( output_dir )
 	@plot.save( File.join( output_dir, "position.gpl" ) )
 	@plot.save_pdf( File.join( output_dir, "position.pdf" ) )
+	File.open( File.join( output_dir, "config.txt" ), 'w' ) do |file|
+	    info( file )
+	end
     end
 
     def show()

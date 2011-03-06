@@ -14,8 +14,25 @@ class Eslam
 	@log_replay.run
     end
 
+    def info( os = $stdout )
+	prev = $>
+	$> = os
+	puts "log_dir: #{@log_dir}"
+	puts "env_path: #{@environment_path}"
+	puts "start_pos: #{@start_pos.position}"
+	@configs.each do |c|
+	    pp c
+	end
+	$> = prev
+    end
+
     def configure
-	config = @eslam.eslam_config
+	# store all configuration objects in this array
+	# for logging
+	@configs = {} 
+
+	# eslam_config
+	config = @eslam.eslam_config.dup
 	config.measurementThreshold.distance = 0.05
 	config.measurementThreshold.angle = 5.0 * Math::PI/180.0
 	config.mappingThreshold.distance = 0.02
@@ -24,11 +41,24 @@ class Eslam
 	config.particleCount = 250
 	config.minEffective = 150
 	@eslam.eslam_config = config
+	@configs[:eslam] = config
 
+	# odometry config
+	config = @eslam.odometry_config.dup
+	@eslam.odometry_config = config
+	@configs[:odometry] = config
+
+	# asguard config
+	config = @eslam.asguard_config.dup
+	@eslam.asguard_config = config
+	@configs[:asguard] = config
+
+	# get start position from gps
 	@start_pos = @log_replay.mb500.position_samples.stream.first[2]
 	@start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
 	@eslam.start_pose = @start_pos
 
+	# set environment path if available
 	@eslam.environment_path = @environment_path if @environment_path 
     end
 
