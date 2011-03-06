@@ -21,35 +21,6 @@ end
 opts[:log_dir] = ARGV[0]
 
 class GpEslam < Eslam
-    def configure
-	super
-
-	# set up the plotting class
-	@plot = PositionPlot.new("Position Plot")
-	@plot.register( :gps, {:title => "gps"} )
-	@plot.register( :odometry, {:title => "odometry"} )
-	@plot.register( :eslam, {:title => "eslam"} )
-
-	@eslam.pose_samples.connect_to :type => :buffer,:size => 100 do |data, name| 
-	    @plot.data( :eslam, data.position ) if data
-	    data
-	end
-
-	@log_replay.mb500.position_samples.connect_to :type => :buffer,:size => 100 do |data, name|
-	    @plot.data( :gps, data.position ) if data
-	    data
-	end
-
-	@log_replay.odometry.odometry_samples.connect_to :type => :buffer,:size => 100 do |data, name|
-	    if data
-		@odometry_offset ||= @start_pos.position - data.position 
-		odometry_pos = data.position + @odometry_offset
-		@plot.data( :odometry, odometry_pos)
-	    end
-	    data
-	end
-    end
-
     def start
 	#@log_replay.reset_time_sync
 	#while @log_replay.step(true) do end
@@ -57,7 +28,24 @@ class GpEslam < Eslam
 	Vizkit.exec
     end
 
+    def prepare_plot
+	return if @plot
+
+	# set up the plotting class
+	@plot = PositionPlot.new("Position Plot")
+	@plot.register( :gps, {:title => "gps"} )
+	@plot.register( :odometry, {:title => "odometry"} )
+	@plot.register( :centroid, {:title => "eslam"} )
+
+	@result.each(:gps) do |r|
+	    [:centroid, :gps, :odometry].each do |s| 
+		@plot.data( s, r.seq[s].current) if r.seq[s].current 
+	    end
+	end
+    end
+
     def save( output_dir )
+	prepare_plot
 	# create target directory
 	Dir.mkdir( output_dir ) unless File.exist?( output_dir )
 	@plot.save( File.join( output_dir, "position.gpl" ) )
@@ -68,6 +56,7 @@ class GpEslam < Eslam
     end
 
     def show()
+	prepare_plot
 	@plot.show
     end
 
