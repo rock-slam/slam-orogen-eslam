@@ -90,67 +90,70 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	    _pose_distribution.write( pd );
 
 #ifdef DEBUG_VIZ
-	viz.getWidget()->setPoseDistribution( pd );
-	viz.getWidget()->setBodyState( bs );
-	viz.getWidget()->setCentroidPose( centroid );
-	base::samples::RigidBodyState ref_pose;
-	while( _reference_pose.read( ref_pose ) == RTT::NewData )
-	    viz.getWidget()->setReferencePose( ref_pose.getPose() );
-	const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
-
-	if( updated )
+	if( _debug_viz.value() )
 	{
-	    typedef eslam::PoseEstimator::Particle Particle;
-	    std::vector<eslam::PoseEstimator::Particle>::iterator el =
-		std::max_element( particles.begin(), particles.end(), 
-			boost::bind( &Particle::weight, _1 ) < boost::bind( &Particle::weight, _2 )  );
-	    envire::MLSMap* map;
-	    //const size_t best_particle_idx = el - particles.begin(); 
-	    if( inspect_particle_idx >= 0 )
-		map = particles[inspect_particle_idx].grid.getMap();
-	    else
-		map = el->grid.getMap();
+	    viz.getWidget()->setPoseDistribution( pd );
+	    viz.getWidget()->setBodyState( bs );
+	    viz.getWidget()->setCentroidPose( centroid );
+	    base::samples::RigidBodyState ref_pose;
+	    while( _reference_pose.read( ref_pose ) == RTT::NewData )
+		viz.getWidget()->setReferencePose( ref_pose.getPose() );
+	    const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
 
-	    if( map && !viz.getWidget()->isDirty() && vizEnv != env )
+	    if( updated )
 	    {
-		// remove all previous maps
-		std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
-		for( std::vector<envire::MultiLevelSurfaceGrid*>::iterator it = vizGrids.begin();
-			it != vizGrids.end(); it++ )
+		typedef eslam::PoseEstimator::Particle Particle;
+		std::vector<eslam::PoseEstimator::Particle>::iterator el =
+		    std::max_element( particles.begin(), particles.end(), 
+			    boost::bind( &Particle::weight, _1 ) < boost::bind( &Particle::weight, _2 )  );
+		envire::MLSMap* map;
+		//const size_t best_particle_idx = el - particles.begin(); 
+		if( inspect_particle_idx >= 0 )
+		    map = particles[inspect_particle_idx].grid.getMap();
+		else
+		    map = el->grid.getMap();
+
+		if( map && !viz.getWidget()->isDirty() && vizEnv != env )
 		{
-		    envire::FrameNode *fn = (*it)->getFrameNode();
-		    while( fn && fn->isAttached() && (fn != vizEnv->getRootNode()) )
+		    // remove all previous maps
+		    std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
+		    for( std::vector<envire::MultiLevelSurfaceGrid*>::iterator it = vizGrids.begin();
+			    it != vizGrids.end(); it++ )
 		    {
-			envire::FrameNode* parent = fn->getParent();
-			vizEnv->detachItem( fn );
-			fn = parent;
+			envire::FrameNode *fn = (*it)->getFrameNode();
+			while( fn && fn->isAttached() && (fn != vizEnv->getRootNode()) )
+			{
+			    envire::FrameNode* parent = fn->getParent();
+			    vizEnv->detachItem( fn );
+			    fn = parent;
+			}
+			vizEnv->detachItem( *it );
 		    }
-		    vizEnv->detachItem( *it );
-		}
-		
-		// replicate framenode
-		envire::FrameNode* fn = new envire::FrameNode( 
-			env->relativeTransform( map->getFrameNode(), map->getEnvironment()->getRootNode() ) );
-		vizEnv->addChild( vizEnv->getRootNode(), fn );
 
-		// copy grids from the best map to the visualization environment
-		for( std::vector<envire::MultiLevelSurfaceGrid::Ptr>::iterator it = map->grids.begin();
-			it != map->grids.end(); it++ )
-		{
-		    // create a new mls map in the viz environment
-		    envire::MultiLevelSurfaceGrid *vizGrid = (*it)->clone();
-		    envire::FrameNode *mapNode = (*it)->getFrameNode()->clone();
-		    vizEnv->addChild( fn, mapNode );
-		    vizEnv->setFrameNode( vizGrid, mapNode );
-		    fn = mapNode;
-		}
+		    // replicate framenode
+		    envire::FrameNode* fn = new envire::FrameNode( 
+			    env->relativeTransform( map->getFrameNode(), map->getEnvironment()->getRootNode() ) );
+		    vizEnv->addChild( vizEnv->getRootNode(), fn );
 
-		viz.getWidget()->setDirty();
-		/*
-		envire::GraphViz viz;
-		viz.writeToFile( vizEnv.get(), "/tmp/vizEnv.dot" );
-		viz.writeToFile( env.get(), "/tmp/env.dot" );
-		*/
+		    // copy grids from the best map to the visualization environment
+		    for( std::vector<envire::MultiLevelSurfaceGrid::Ptr>::iterator it = map->grids.begin();
+			    it != map->grids.end(); it++ )
+		    {
+			// create a new mls map in the viz environment
+			envire::MultiLevelSurfaceGrid *vizGrid = (*it)->clone();
+			envire::FrameNode *mapNode = (*it)->getFrameNode()->clone();
+			vizEnv->addChild( fn, mapNode );
+			vizEnv->setFrameNode( vizGrid, mapNode );
+			fn = mapNode;
+		    }
+
+		    viz.getWidget()->setDirty();
+		    /*
+		       envire::GraphViz viz;
+		       viz.writeToFile( vizEnv.get(), "/tmp/vizEnv.dot" );
+		       viz.writeToFile( env.get(), "/tmp/env.dot" );
+		       */
+		}
 	    }
 	}
 #endif
@@ -187,13 +190,21 @@ bool Task::configureHook()
     }
 
 #ifdef DEBUG_VIZ
-    viz.start();
+    if( _debug_viz.value() )
+    {
+	viz.start();
 
-    if( useShared )
-	vizEnv = env;
-    else
-	vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
-    viz.getWidget()->setEnvironment( vizEnv.get() );
+	if( useShared )
+	    vizEnv = env;
+	else
+	    vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
+	viz.getWidget()->setEnvironment( vizEnv.get() );
+    }
+#endif
+
+#ifndef DEBUG_VIZ
+    if( _debub_viz.value() )
+	throw std::runtime_error( "DEBUG_VIZ not compiled in." );
 #endif
 
     // init the filter

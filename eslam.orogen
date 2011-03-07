@@ -27,7 +27,7 @@ task_context 'Task' do
 
     property('asguard_config', '/asguard/Configuration').
 	doc 'Configuration options for the asguard robot.'
-	
+
     ##########################
     # environment parameters
     ##########################
@@ -37,6 +37,9 @@ task_context 'Task' do
 
     property('environment_debug_path', 'string').
 	doc 'if this property is set, the final environment will be written to the given file path.'
+
+    property('debug_viz', 'bool', false).
+	doc 'if set to true, the module will display the current environment for debugging.'
 
     ##########################
     # aggregator parameters
