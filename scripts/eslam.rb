@@ -6,10 +6,14 @@ Orocos.initialize
 
 class SequenceArray
     class Sequence
-	def initialize
+	def initialize( samples = [], times = [] )
 	    @idx = 0
-	    @samples = []
-	    @times = []
+	    @samples = samples 
+	    @times = times 
+	end
+
+	def clone 
+	    Sequence.new @idx.clone, @samples.clone
 	end
 
 	def push sample, ts
@@ -19,6 +23,10 @@ class SequenceArray
 
 	def current_time
 	    @times[@idx] if @idx < @samples.size
+	end
+
+	def current_time=( val )
+	    @times[@idx] = val
 	end
 
 	def next_time
@@ -38,11 +46,15 @@ class SequenceArray
 	    current_time
 	end
 
-	attr_accessor :idx, :samples
+	attr_accessor :idx, :samples, :times
     end
 
-    def initialize
-	@seq = {} 
+    def initialize( seq = {} )
+	@seq = seq 
+    end
+
+    def clone
+	SequenceArray.new @seq.clone
     end
 
     def add( name )
@@ -77,13 +89,20 @@ end
 
 
 class Eslam
-    def initialize( log_dir, environment_path = nil )
-	@log_dir = log_dir
-	@environment_path = environment_path
+    def initialize( opts )
+	@opts = opts
+	@log_dir = opts[:log_dir]
+	@environment_path = opts[:env_dir]
+	@seed = 42
     end
 
     def start
-	@log_replay.run
+	@log_replay.reset_time_sync
+	while @log_replay.step(true) do 
+	    # need to call process events here 
+	    # for the reader callbacks to work
+	    Vizkit.process_events
+	end
     end
 
     def info( os = $stdout )
@@ -92,45 +111,70 @@ class Eslam
 	puts "log_dir: #{@log_dir}"
 	puts "env_path: #{@environment_path}"
 	puts "start_pos: #{@start_pos.position}"
+	pp @errors
 	@configs.each do |c|
 	    pp c
 	end
 	$> = prev
     end
 
-    def configure
+    def params
 	# store all configuration objects in this array
 	# for logging
 	@configs = {} 
 
 	# eslam_config
 	config = @eslam.eslam_config.dup
+	config.seed = @seed
 	config.measurementThreshold.distance = 0.05
 	config.measurementThreshold.angle = 5.0 * Math::PI/180.0
-	config.mappingThreshold.distance = 0.02
-	config.mappingThreshold.angle = 5.0 * Math::PI/180.0
 	config.initialError = 0.5
-	config.particleCount = 500
-	config.minEffective = 100
-	@eslam.eslam_config = config
+	config.particleCount = 250
+	config.minEffective = 50
+	config.measurementError = 0.15
+	config.discountFactor = 0.95
+	config.spreadThreshold = 0.5
+	config.spreadTranslationFactor = 0.0001
+	config.spreadRotationFactor = 0.00005
+	config.slipFactor = 0.2
 	@configs[:eslam] = config
 
 	# odometry config
 	config = @eslam.odometry_config.dup
 	@eslam.odometry_config = config
-	config.yawError = 1e-3
-	config.errorFactor = 2.0
+	config.seed = @seed
+	config.constError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
+	config.constError.yaw = 1e-2 
+
+	config.distError.translation = Eigen::Vector3.new( 0.1, 0.5, 0.0 )
+	config.distError.yaw = 1e-3 
+
+	config.tiltError.translation = Eigen::Vector3.new( 0.0, 0.0, 0.0 )
+	config.tiltError.yaw = 0
+
+	config.dthetaError.translation = Eigen::Vector3.new( 0.05, 0.01, 0.0 )
+	config.dthetaError.yaw = 0.015
 	@configs[:odometry] = config
 
 	# asguard config
 	config = @eslam.asguard_config.dup
-	@eslam.asguard_config = config
 	@configs[:asguard] = config
+    end
+
+    def configure
+	# initialize the @configs array with the parameters for 
+	# each of the configurations
+	params
+
+	# write configurations to module
+	@eslam.eslam_config = @configs[:eslam]
+	@eslam.odometry_config = @configs[:odometry] 
+	@eslam.asguard_config = @configs[:asguard] 
 
 	# get start position from gps
 	@start_pos = @log_replay.mb500.position_samples.stream.first[2]
 	@start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
-	@start_pos.position += antenna_correction( @start_pos.orientation )
+	@start_pos.position -= antenna_correction( @start_pos.orientation )
 	@eslam.start_pose = @start_pos
 
 	# set environment path if available
@@ -168,8 +212,7 @@ class Eslam
 	# This will kill processes when we quit the block
 	Orocos::Process.spawn('eslam_test') do |p|
 	    @eslam = p.task('eslam')
-
-	    Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
+	    #Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
 	    @log_replay = Orocos::Log::Replay.open( @log_dir )
 	    @log_replay.hokuyo.scans.connect_to( @eslam.scan_samples, :type => :buffer, :size => 1000 ) 
@@ -178,7 +221,6 @@ class Eslam
 	    @log_replay.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
 
 	    configure
-
 	    threshold = 0.5
 	    status_reader = @eslam.streamaligner_status.reader
 
@@ -191,7 +233,7 @@ class Eslam
 		end
 
 		if latest_time and latest_time + threshold < current_time
-		    0.1
+		    0.01
 		else
 		    0
 		end
@@ -204,6 +246,8 @@ class Eslam
 	end
 
 	correct_result
+	calc_error
+	pp @errors
     end
 
     def antenna_correction orientation
@@ -218,5 +262,43 @@ class Eslam
 		r.seq[s].current += corr if r.seq[s].current
 	    end
 	end 
+    end
+
+    def gps_time_offset
+	# debug code to find the offset in the gps time
+	times = @result.seq[:gps].times.clone
+
+	File.open("/tmp/gps_time_offset.txt", "w") do |f|
+	    (-1.0..1.0).step(0.02) do |offset|
+		r = times.map {|t| t + offset} 
+		@result.seq[:gps].times = r
+
+		calc_error
+		f.puts "#{offset} #{@errors[:centroid][:mean_error]}"
+	    end
+	end
+
+	@result.seq[:gps].times = times
+    end
+
+    def calc_error
+	plots = [:centroid, :odometry, :gps]
+	@errors = {}
+	plots.each {|s| @errors[s] = {:count => 0, :sum_error => 0, :dist => 0} }
+
+	@result.each(:gps) do |r|
+	    ref_pos = r.seq[:gps].current
+	    @errors.each do |s,v| 
+		pos = r.seq[s].current
+		v[:count] += 1
+		v[:final_error] = (pos - ref_pos).norm
+		v[:sum_error] += v[:final_error] 
+		if v[:last_pos] 
+		    v[:dist] += (pos - v[:last_pos]).norm
+		end
+		v[:last_pos] = pos
+	    end
+	end
+	@errors.each {|k,v| v[:mean_error] = v[:sum_error] / v[:count]}
     end
 end

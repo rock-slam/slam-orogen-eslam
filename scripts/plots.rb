@@ -59,17 +59,13 @@ class PositionPlot
 
     def plot( gp )
 	Gnuplot::Plot.new( gp ) do |plot|
-
-	    plot.set "title '#{@title}' font 'Helvetica,20'"
-	    plot.set "xlabel 'x (East)(m)' font 'Helvetica,14'"
-	    plot.set "ylabel 'y (North)(m)' font 'Helvetica,14'"
+	    plot.set "title '#{@title}' font 'Helvetica,8'"
+	    plot.set "xlabel 'East (m)' font 'Helvetica,8'"
+	    plot.set "ylabel 'North (m)' font 'Helvetica,8'"
 	    plot.set "key spacing 1.5"
-	    plot.set "key font 'Helvetica,14'"
+	    plot.set "key font 'Helvetica,8'"
 	    plot.set "key right bottom"
-
 	      
-	    #plot.arbitrary_lines  "set ylabel \"y label" font \"Helvetica,20\"" 
-	    
 	    plots = Array.new
 	    obj_idx = 1
 
@@ -81,7 +77,6 @@ class PositionPlot
 
 		if p[:pos][0].length > 0
 		    plots << Gnuplot::DataSet.new( p[:pos] ) { |ds|
-			ds.with = "linespoints"
 			ds.title = p[:title] 
 			if p[:lt]
 			    ds.with = "l lt #{p[:lt]}"
