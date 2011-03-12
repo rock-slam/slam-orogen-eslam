@@ -29,7 +29,7 @@ opts[:log_dir] = ARGV[0]
 class Array
     def sum; inject { |sum,x| sum+x }; end
     def mean; sum / size; end; 
-    def stdev; Math.sqrt( inject { |sum,x| sum+x**2 } - mean**2 ); end
+    def stdev; Math.sqrt( inject(0) { |sum,x| sum+(x-mean)**2 } / (size-1) ); end
 end
 
 class Batch < Eslam 
