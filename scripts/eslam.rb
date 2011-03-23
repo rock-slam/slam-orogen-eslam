@@ -144,7 +144,7 @@ class Eslam
 	@eslam.odometry_config = config
 	config.seed = @seed
 	config.constError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
-	config.constError.yaw = 1e-2 
+	config.constError.yaw = 5e-3 
 
 	config.distError.translation = Eigen::Vector3.new( 0.1, 0.5, 0.0 )
 	config.distError.yaw = 1e-3 
@@ -153,7 +153,7 @@ class Eslam
 	config.tiltError.yaw = 0
 
 	config.dthetaError.translation = Eigen::Vector3.new( 0.05, 0.01, 0.0 )
-	config.dthetaError.yaw = 0.015
+	config.dthetaError.yaw = 0.005
 	@configs[:odometry] = config
 
 	# asguard config
@@ -210,6 +210,7 @@ class Eslam
 
     def run
 	# This will kill processes when we quit the block
+	#Orocos::Process.spawn('eslam_test', :valgrind => true, :valgrind_options => ["--track-origins=yes"] ) do |p|
 	Orocos::Process.spawn('eslam_test') do |p|
 	    @eslam = p.task('eslam')
 	    #Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
@@ -247,7 +248,19 @@ class Eslam
 
 	correct_result
 	calc_error
-	pp @errors
+	#pp @errors
+	puts "\nmean filter\tmean odo\tmax filter\tmax odo"
+	puts "%.2f\t%.2f\t%.2f\t%.2f" % [ 
+	    @errors[:centroid][:mean_error], 
+	    @errors[:odometry][:mean_error], 
+	    @errors[:centroid][:max_error], 
+	    @errors[:odometry][:max_error] ]
+
+	puts "dist filter\tdist odo\tdist gps"
+	puts "%.2f\t%.2f\t%.2f" % [ 
+	    @errors[:centroid][:dist], 
+	    @errors[:odometry][:dist], 
+	    @errors[:gps][:dist] ]
     end
 
     def antenna_correction orientation
@@ -284,15 +297,17 @@ class Eslam
     def calc_error
 	plots = [:centroid, :odometry, :gps]
 	@errors = {}
-	plots.each {|s| @errors[s] = {:count => 0, :sum_error => 0, :dist => 0} }
+	plots.each {|s| @errors[s] = {:count => 0, :sum_error => 0, :dist => 0, :max_error => 0} }
 
 	@result.each(:gps) do |r|
 	    ref_pos = r.seq[:gps].current
 	    @errors.each do |s,v| 
 		pos = r.seq[s].current
 		v[:count] += 1
-		v[:final_error] = (pos - ref_pos).norm
-		v[:sum_error] += v[:final_error] 
+		error = (pos - ref_pos).norm
+		v[:max_error] = error if error > v[:max_error]
+		v[:final_error] = error
+		v[:sum_error] += error 
 		if v[:last_pos] 
 		    v[:dist] += (pos - v[:last_pos]).norm
 		end
