@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include <envire/tools/GraphViz.hpp>
+#include <eslam/ExpectationMaximization.hpp>
 
 using namespace eslam;
 
@@ -85,6 +86,17 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		particles.begin(), 
 		particles.end(), 
 		std::back_inserter(pd.particles) );
+
+	std::vector<Eigen::Vector2d> em_pars;
+	std::vector<double> em_weights;
+	eslam::ExpectationMaximization<double, 2> em;
+	for( size_t i=0; i<pd.particles.size(); i++ )
+	{
+	    em_pars.push_back( particles[i].position );
+	    em_weights.push_back( particles.[i].weight );
+	}
+	em.initialize( 10, em_pars, em_weights );
+	pd.gmm.params.swap( em.gmm.params );
 
 	if( _pose_distribution.connected() )
 	    _pose_distribution.write( pd );
