@@ -203,7 +203,7 @@ bool Task::configureHook()
 #endif
 
 #ifndef DEBUG_VIZ
-    if( _debub_viz.value() )
+    if( _debug_viz.value() )
 	throw std::runtime_error( "DEBUG_VIZ not compiled in." );
 #endif
 
