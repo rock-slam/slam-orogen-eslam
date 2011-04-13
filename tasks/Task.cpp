@@ -87,15 +87,16 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 		particles.end(), 
 		std::back_inserter(pd.particles) );
 
-	std::vector<Eigen::Vector2d> em_pars;
+	std::vector<base::Vector2d> em_pars;
 	std::vector<double> em_weights;
-	eslam::ExpectationMaximization<double, 2> em;
+	eslam::ExpectationMaximization<PoseDistribution::GMM> em;
 	for( size_t i=0; i<pd.particles.size(); i++ )
 	{
 	    em_pars.push_back( particles[i].position );
-	    em_weights.push_back( particles.[i].weight );
+	    em_weights.push_back( particles[i].weight );
 	}
-	em.initialize( 10, em_pars, em_weights );
+	em.initialize( 5, em_pars, em_weights );
+	em.run( 1e-5, 10 );
 	pd.gmm.params.swap( em.gmm.params );
 
 	if( _pose_distribution.connected() )
