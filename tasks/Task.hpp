@@ -18,7 +18,6 @@
 namespace eslam {
     class Task : public TaskBase
     {
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class TaskBase;
 
     protected:
@@ -48,6 +47,7 @@ namespace eslam {
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
     public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Task(std::string const& name = "eslam::Task");
 
         /** This hook is called by Orocos when the state machine transitions
