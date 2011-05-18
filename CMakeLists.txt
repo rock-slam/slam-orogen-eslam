@@ -17,9 +17,6 @@ if( DEBUG_VIZ )
     link_directories(${ESLAMVIZ_LIBRARY_DIRS})
 endif( DEBUG_VIZ )
 
-find_package(Eigen2 REQUIRED)
-include_directories(${EIGEN2_INCLUDE_DIR})
-
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/.orogen/config")
 INCLUDE(eslamBase)
 
