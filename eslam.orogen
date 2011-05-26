@@ -6,6 +6,7 @@ using_library 'envire'
 using_library 'asguard'
 
 import_types_from 'base'
+import_types_from 'dense_stereo'
 import_types_from "asguard/BodyState.hpp"
 import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
@@ -44,17 +45,6 @@ task_context 'Task' do
     ##########################
     # aggregator parameters
     ##########################
-    property('scan_period', 'double', 0.02).
-	doc 'Time in s between laserscan readings'
-
-    property('bodystate_period', 'double', 0.01).
-	doc 'Time in s between bodystate readings'
-
-    property('orientation_period', 'double', 0.01).
-	doc 'Time in s between orientation readings'
-
-    property('max_delay', 'double', 0.2).
-	doc 'Time in s the state estimator will wait for expected readings.'
 
     output_port('streamaligner_status', '/aggregator/StreamAlignerStatus').
 	doc 'Provides debug information on the state of the StreamAligner'
@@ -69,6 +59,10 @@ task_context 'Task' do
     ##########################
     # i/o ports 
     ##########################
+
+    input_port('distance_frames', '/dense_stereo/distance_image').
+	needs_reliable_connection.
+	doc 'distance images'
 
     input_port('scan_samples', '/base/samples/LaserScan').
 	needs_reliable_connection.
@@ -91,6 +85,22 @@ task_context 'Task' do
 
     output_port('pose_distribution', '/eslam/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
+
+    ##########################
+    # transformer
+    ##########################
+
+    transformer do
+	max_latency( 0.2 )
+
+	transformation("laser", "body")	
+	transformation("lcamera", "body")
+	transformation("body", "odometry")
+
+	align_port("scan_samples", 0.02) 
+	align_port("distance_frames", 0.1)
+	align_port("bodystate_samples", 0.01)
+    end
 
     port_driven
 end

@@ -7,72 +7,58 @@
 using namespace eslam;
 
 Task::Task(std::string const& name)
-    : TaskBase(name), 
-    aggr( new aggregator::PullStreamAligner() ),
-    body_state_valid( false ),
-    scan_valid( false )
+    : TaskBase(name)
 {
 }
 
-template <class T>
-bool readPortSample( RTT::InputPort<T> *port, base::Time& ts, T& data)
+void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::asguard::BodyState &bodystate_samples_sample)
 {
-    if( port->read( data ) == RTT::NewData )
-    {
-	ts = data.time;
-	return true;
-    }
-    return false;
-}
-
-void Task::bodystate_callback( base::Time ts, const asguard::BodyState& wbs )
-{
-    body_state = wbs;
-    body_state_valid = true;
-}
-
-void Task::scan_callback( base::Time ts, const base::samples::LaserScan& scan )
-{
-    this->scan = scan;
-    scan_valid = true;
-}
-
-void Task::orientation_callback( base::Time ts, const base::samples::RigidBodyState& rbs )
-{
-    if( !body_state_valid )
+    Eigen::Affine3d body2odometry;
+    if( !_body2odometry.get( ts, body2odometry ) )
 	return;
 
-    static Eigen::Quaterniond update_orientation;
-    static asguard::BodyState update_bodystate; 
+    // call the filter with the bodystate
+    bool updated = filter->update( body2odometry, bodystate_samples_sample ); 
 
-    Eigen::Quaterniond orientation(rbs.orientation);
+    // write result to output port
+    base::Affine3d centroid = filter->getCentroid();
 
-    asguard::BodyState bs( body_state );
+    base::samples::RigidBodyState res_rbs;
+    res_rbs.time = ts;
+    res_rbs.setTransform( centroid );
 
-    bool updated = false;
-
-    if( useScans && scan_valid )
-	updated = filter->update( bs, orientation, scan );
-    else 
-	updated = filter->update( bs, orientation );
+    _pose_samples.write( res_rbs );
 
     // record bodystate and orientation when an update 
     // has occured. this is mainly for visualizing purposes,
     // so to capture the updated state.
     if( updated )
     {
-	update_orientation = orientation;
-	update_bodystate = bs;
+	update_orientation = body2odometry.linear();
+	update_bodystate = bodystate_samples_sample;
     }
 
-    base::Pose centroid = filter->getCentroid();
+    // update debug information
+    updateFilterInfo( ts, bodystate_samples_sample, centroid, updated  );
+}
 
-    base::samples::RigidBodyState res_rbs;
-    res_rbs.time = ts;
-    res_rbs.setPose( centroid );
+void Task::distance_framesTransformerCallback(const base::Time &ts, const ::dense_stereo::distance_image &distance_frames_sample)
+{
+    throw std::runtime_error("Transformer callback for distance_frames not implemented");
+}
 
-    _pose_samples.write( res_rbs );
+void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample)
+{
+    Eigen::Affine3d body2odometry, laser2body;
+    if( !_body2odometry.get( ts, body2odometry ) || !_laser2body.get( ts, laser2body ) )
+	return;
 
+    // update the filter with laser data
+    filter->update( body2odometry, scan_samples_sample, laser2body );
+}
+
+void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, const base::Affine3d& centroid, bool updated )
+{
 #ifndef DEBUG_VIZ
     if( _pose_distribution.connected() )
 #endif
@@ -107,7 +93,7 @@ void Task::orientation_callback( base::Time ts, const base::samples::RigidBodySt
 	{
 	    viz.getWidget()->setPoseDistribution( pd );
 	    viz.getWidget()->setBodyState( bs );
-	    viz.getWidget()->setCentroidPose( centroid );
+	    viz.getWidget()->setCentroidPose( base::Pose( centroid ) );
 	    base::samples::RigidBodyState ref_pose;
 	    while( _reference_pose.read( ref_pose ) == RTT::NewData )
 		viz.getWidget()->setReferencePose( ref_pose.getPose() );
@@ -227,27 +213,7 @@ bool Task::configureHook()
 
     std::cerr << "initialized" << std::endl;
 
-    // setup the aggregator with the timeout value provided by the module
-    aggr->setTimeout( base::Time::fromSeconds( _max_delay.value() ) );
-
-    // a priority value of 1 will make sure, the orientation callback is call second
-    // for a timestamp with the same value 
-    orientation_idx = aggr->registerStream<base::samples::RigidBodyState>(
-	   boost::bind( readPortSample<base::samples::RigidBodyState>, &_orientation_samples, _1, _2 ),
-	   boost::bind( &Task::orientation_callback, this, _1, _2 ), -1,
-	   base::Time::fromSeconds( _orientation_period.value() ), 1 );
-
-    bodystate_idx = aggr->registerStream<asguard::BodyState>(
-	   boost::bind( readPortSample<asguard::BodyState>, &_bodystate_samples, _1, _2 ),
-	   boost::bind( &Task::bodystate_callback, this, _1, _2 ), -1, 
-	   base::Time::fromSeconds( _bodystate_period.value() ) );
-
-    scan_idx = aggr->registerStream<base::samples::LaserScan>(
-	   boost::bind( readPortSample<base::samples::LaserScan>, &_scan_samples, _1, _2 ),
-	   boost::bind( &Task::scan_callback, this, _1, _2 ), -1, 
-	   base::Time::fromSeconds( _scan_period.value() ) );
-
-    return true;
+    return TaskBase::configureHook();
 }
 
 bool Task::startHook()
@@ -257,14 +223,18 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    while(aggr->pull()) 
-	while(aggr->step());
+    // this is to be backward compatible
+    base::samples::RigidBodyState body2odometry;
+    while( _orientation_samples.read( body2odometry ) == RTT::NewData )
+	transformer.pushDynamicTransformation( body2odometry );
+
+    TaskBase::updateHook();
 
     // only write output if the aggregator actually had some data
     // this is slightly implicit, and could be made more explicit in
     // the aggregator
-    if( aggr->getLatestTime() > base::Time() )
-	_streamaligner_status.write( aggr->getStatus() );
+    if( transformer.getStatus().latest_time > base::Time() )
+	_streamaligner_status.write( transformer.getStatus() );
 }
 
 // void Task::errorHook()

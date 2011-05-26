@@ -24,28 +24,24 @@ namespace eslam {
 	boost::shared_ptr<eslam::EmbodiedSlamFilter> filter;
 	boost::shared_ptr<envire::Environment> env;
 
-	boost::shared_ptr<aggregator::PullStreamAligner> aggr;
-
-	int bodystate_idx;
-	int orientation_idx;
-	int scan_idx;
-    
-	void bodystate_callback( base::Time ts, const asguard::BodyState& body_state );
-	void orientation_callback( base::Time ts, const base::samples::RigidBodyState& orientation );
-	void scan_callback( base::Time ts, const base::samples::LaserScan& scan );
-
-	asguard::BodyState body_state;
-	base::samples::LaserScan scan;
-
-	bool body_state_valid;
-	bool scan_valid;
-
+	// debug temporaries
+	Eigen::Quaterniond update_orientation;
+	asguard::BodyState update_bodystate; 
+	// derived configuration variable 
 	bool useScans;
 
 #ifdef DEBUG_VIZ
 	boost::shared_ptr<envire::Environment> vizEnv;
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
+	// transformer callbacks
+        virtual void bodystate_samplesTransformerCallback(const base::Time &ts, const ::asguard::BodyState &bodystate_samples_sample);
+        virtual void distance_framesTransformerCallback(const base::Time &ts, const ::dense_stereo::distance_image &distance_frames_sample);
+        virtual void scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample);
+
+	/// update mainly debug information and the state of the filter
+	void updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, const base::Affine3d& centroid, bool updated );
+
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Task(std::string const& name = "eslam::Task");
