@@ -252,13 +252,13 @@ class Eslam
 	    @log_replay.odometry.odometry_samples.connect_to( @eslam.orientation_samples, :type => :buffer, :size => 1000 )
 	    @log_replay.odometry.bodystate_samples.connect_to( @eslam.bodystate_samples, :type => :buffer, :size => 1000 )
 	    @has_gps = false
-	    if @log_replay.mb500.has_port? :position_samples and false
+	    if @log_replay.mb500.has_port? :position_samples # and false
 		@log_replay.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
 		@has_gps = true
 		puts "INFO: Using GPS Position data for reference."
 	    end
 	    @has_dynamixel = false
-	    if @log_replay.dynamixel.has_port? :lowerDynamixel2UpperDynamixel
+	    if @log_replay.has_task? :dynamixel and @log_replay.dynamixel.has_port? :lowerDynamixel2UpperDynamixel
 		@log_replay.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
 		@has_dynamixel = true
 		puts "INFO: Using dynamic transformation chain for sensor head."
