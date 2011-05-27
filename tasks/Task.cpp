@@ -49,12 +49,15 @@ void Task::distance_framesTransformerCallback(const base::Time &ts, const ::dens
 
 void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample)
 {
-    Eigen::Affine3d body2odometry, laser2body;
-    if( !_body2odometry.get( ts, body2odometry ) || !_laser2body.get( ts, laser2body ) )
-	return;
+    if( useScans )
+    {
+	Eigen::Affine3d body2odometry, laser2body;
+	if( !_body2odometry.get( ts, body2odometry ) || !_laser2body.get( ts, laser2body ) )
+	    return;
 
-    // update the filter with laser data
-    filter->update( body2odometry, scan_samples_sample, laser2body );
+	// update the filter with laser data
+	filter->update( body2odometry, scan_samples_sample, laser2body );
+    }
 }
 
 void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, const base::Affine3d& centroid, bool updated )
