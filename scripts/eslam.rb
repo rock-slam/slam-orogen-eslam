@@ -171,11 +171,14 @@ class Eslam
 	@eslam.odometry_config = @configs[:odometry] 
 	@eslam.asguard_config = @configs[:asguard] 
 
-	# get start position from gps
-	@start_pos = @log_replay.mb500.position_samples.stream.first[2]
-	@start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
-	@start_pos.position -= antenna_correction( @start_pos.orientation )
-	@eslam.start_pose = @start_pos
+	@start_pos = @eslam.start_pose 
+	if @has_gps
+	    # get start position from gps
+	    @start_pos = @log_replay.mb500.position_samples.stream.first[2]
+	    @start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
+	    @start_pos.position -= antenna_correction( @start_pos.orientation )
+	    @eslam.start_pose = @start_pos
+	end
 
 	# set environment path if available
 	@eslam.environment_path = @environment_path if @environment_path 
@@ -189,10 +192,12 @@ class Eslam
 	    data
 	end
 
-	gps = @result.add(:gps)
-	@log_replay.mb500.position_samples.connect_to :type => :buffer,:size => 100 do |data, name|
-	    gps.push( data.position, data.time ) if data
-	    data
+	if @has_gps
+	    gps = @result.add(:gps)
+	    @log_replay.mb500.position_samples.connect_to :type => :buffer,:size => 100 do |data, name|
+		gps.push( data.position, data.time ) if data
+		data
+	    end
 	end
 
 	odometry = @result.add(:odometry)
@@ -208,6 +213,33 @@ class Eslam
 	end
     end
 
+    def setup_transforms
+	# set the static transformation for the laser to body transform
+	headAngle = - Math::PI / 180.0 * 40.0
+	qhead2body = Eigen::Quaternion.from_angle_axis( headAngle, Eigen::Vector3.new( 1, 0, 0 ) )
+	thead2body = Eigen::Vector3.new( 0, 0.022, 0.1175 )
+
+	if @has_dynamixel
+	    add_static_transform( "laser", "tilt_head", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0.0, 0.006, 0.063 ) )
+	    add_static_transform( "tilt_head", "upper_dynamixel", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0, 0.0, -0.018 ) )
+	    add_static_transform( "lower_dynamixel", "head", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0.0, 0.0, 0.099 ) )
+	    add_static_transform( "head", "body", qhead2body, thead2body )
+	else
+	    # use this if the dynamixel info is not available
+	    tlaser2head = Eigen::Vector3.new( 0.0, 0.0075, 0.145 )
+	    add_static_transform( "laser", "body", qhead2body, thead2body + qhead2body * tlaser2head )
+	end
+    end
+
+    def add_static_transform( source, target, orientation, position )
+	trans = Types::Base::Samples::RigidBodyState.new
+	trans.sourceFrame = source 
+	trans.targetFrame = target 
+	trans.orientation = orientation 
+	trans.position = position 
+	@eslam.static_transformations.write trans
+    end
+
     def run
 	# This will kill processes when we quit the block
 	#Orocos::Process.spawn('eslam_test', :valgrind => true, :valgrind_options => ["--track-origins=yes"] ) do |p|
@@ -219,7 +251,18 @@ class Eslam
 	    @log_replay.hokuyo.scans.connect_to( @eslam.scan_samples, :type => :buffer, :size => 1000 ) 
 	    @log_replay.odometry.odometry_samples.connect_to( @eslam.orientation_samples, :type => :buffer, :size => 1000 )
 	    @log_replay.odometry.bodystate_samples.connect_to( @eslam.bodystate_samples, :type => :buffer, :size => 1000 )
-	    @log_replay.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
+	    @has_gps = false
+	    if @log_replay.mb500.has_port? :position_samples and false
+		@log_replay.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
+		@has_gps = true
+		puts "INFO: Using GPS Position data for reference."
+	    end
+	    @has_dynamixel = false
+	    if @log_replay.dynamixel.has_port? :lowerDynamixel2UpperDynamixel
+		@log_replay.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
+		@has_dynamixel = true
+		puts "INFO: Using dynamic transformation chain for sensor head."
+	    end
 
 	    configure
 	    threshold = 0.5
@@ -242,6 +285,7 @@ class Eslam
 
 	    @eslam.configure
 	    @eslam.start
+	    setup_transforms
 
 	    start
 	end
