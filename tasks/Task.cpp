@@ -44,7 +44,13 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
 
 void Task::distance_framesTransformerCallback(const base::Time &ts, const ::dense_stereo::distance_image &distance_frames_sample)
 {
-    throw std::runtime_error("Transformer callback for distance_frames not implemented");
+    //throw std::runtime_error("Transformer callback for distance_frames not implemented");
+    Eigen::Affine3d body2odometry, lcamera2body;
+    if( !_body2odometry.get( ts, body2odometry ) || !_lcamera2body.get( ts, lcamera2body ) )
+	return;
+
+    // update the filter with laser data
+    filter->update( body2odometry, distance_frames_sample, lcamera2body );
 }
 
 void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample)
