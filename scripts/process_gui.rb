@@ -8,7 +8,7 @@ end
 
 class GuiEslam < Eslam
     def start
-	Vizkit.control @log_replay
+	Vizkit.control @replay.log
 	Vizkit.exec
     end
 end

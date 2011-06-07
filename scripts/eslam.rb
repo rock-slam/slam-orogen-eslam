@@ -1,92 +1,10 @@
 require 'vizkit'
 require 'orocos'
+require 'sequence_array'
+require 'asguard'
 include Orocos
 
 Orocos.initialize
-
-class SequenceArray
-    class Sequence
-	def initialize( samples = [], times = [] )
-	    @idx = 0
-	    @samples = samples 
-	    @times = times 
-	end
-
-	def clone 
-	    Sequence.new @idx.clone, @samples.clone
-	end
-
-	def push sample, ts
-	    @samples << sample
-	    @times << ts
-	end
-
-	def current_time
-	    @times[@idx] if @idx < @samples.size
-	end
-
-	def current_time=( val )
-	    @times[@idx] = val
-	end
-
-	def next_time
-	    @times[@idx+1] if (@idx+1) < @samples.size
-	end
-
-	def current
-	    @samples[@idx]
-	end
-
-	def current=( val )
-	    @samples[@idx] = val
-	end
-
-	def advance
-	    @idx += 1 unless @idx >= @samples.size
-	    current_time
-	end
-
-	attr_accessor :idx, :samples, :times
-    end
-
-    def initialize( seq = {} )
-	@seq = seq 
-    end
-
-    def clone
-	SequenceArray.new @seq.clone
-    end
-
-    def add( name )
-	@seq[name] = Sequence.new
-    end
-
-    def advance( name )
-	if t = @seq[name].advance
-	    @seq.each do |sn, sv|
-		while sv.next_time and sv.next_time < t do sv.advance end
-	    end
-	end
-    end
-
-    def each( name )
-	reset
-	return unless @seq[name].current
-	    
-	begin
-	    yield self
-	end while advance(name)
-    end
-
-    def reset
-	@seq.each do |sn, sv|
-	    sv.idx = 0
-	end
-    end
-
-    attr_accessor :seq
-end
-
 
 class Eslam
     def initialize( opts )
@@ -97,8 +15,8 @@ class Eslam
     end
 
     def start
-	@log_replay.reset_time_sync
-	while @log_replay.step(true) do 
+	@replay.log.reset_time_sync
+	while @replay.log.step(true) do 
 	    # need to call process events here 
 	    # for the reader callbacks to work
 	    Vizkit.process_events
@@ -126,12 +44,14 @@ class Eslam
 	# eslam_config
 	config = @eslam.eslam_config.dup
 	config.seed = @seed
-	config.measurementThreshold.distance = 0.05
-	config.measurementThreshold.angle = 5.0 * Math::PI/180.0
-	config.initialError = 0.5
+	config.mappingThreshold.distance = 0.02
+	config.mappingThreshold.angle = 3.0 * Math::PI/180.0
+	config.measurementThreshold.distance = 0.01
+	config.measurementThreshold.angle = 3.0 * Math::PI/180.0
+	config.initialError = 0.0
 	config.particleCount = 250
 	config.minEffective = 50
-	config.measurementError = 0.15
+	config.measurementError = 0.05
 	config.discountFactor = 0.95
 	config.spreadThreshold = 0.5
 	config.spreadTranslationFactor = 0.0001
@@ -143,17 +63,17 @@ class Eslam
 	config = @eslam.odometry_config.dup
 	@eslam.odometry_config = config
 	config.seed = @seed
-	config.constError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
-	config.constError.yaw = 5e-3 
+	config.constError.translation = Eigen::Vector3.new( 0.0005, 0.0005, 0.0 )
+	config.constError.yaw = 0e-5 
 
-	config.distError.translation = Eigen::Vector3.new( 0.1, 0.5, 0.0 )
-	config.distError.yaw = 1e-3 
+	config.distError.translation = Eigen::Vector3.new( 0.04, 0.10, 0.0 )
+	config.distError.yaw = 1e-4 
 
-	config.tiltError.translation = Eigen::Vector3.new( 0.0, 0.0, 0.0 )
-	config.tiltError.yaw = 0
+	config.tiltError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
+	config.tiltError.yaw = 0.001
 
-	config.dthetaError.translation = Eigen::Vector3.new( 0.05, 0.01, 0.0 )
-	config.dthetaError.yaw = 0.005
+	config.dthetaError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
+	config.dthetaError.yaw = 0.001
 	@configs[:odometry] = config
 
 	# asguard config
@@ -172,10 +92,10 @@ class Eslam
 	@eslam.asguard_config = @configs[:asguard] 
 
 	@start_pos = @eslam.start_pose 
-	if @has_gps
+	if @replay.use? :gps
 	    # get start position from gps
-	    @start_pos = @log_replay.mb500.position_samples.stream.first[2]
-	    @start_pos.orientation = @log_replay.xsens_imu.orientation_samples.stream.first[2].orientation
+	    @start_pos = @replay.log.mb500.position_samples.stream.first[2]
+	    @start_pos.orientation = @replay.log.xsens_imu.orientation_samples.stream.first[2].orientation
 	    @start_pos.position -= antenna_correction( @start_pos.orientation )
 	    @eslam.start_pose = @start_pos
 	end
@@ -192,9 +112,9 @@ class Eslam
 	    data
 	end
 
-	if @has_gps
+	if @replay.use? :gps
 	    gps = @result.add(:gps)
-	    @log_replay.mb500.position_samples.connect_to :type => :buffer,:size => 100 do |data, name|
+	    @replay.log.mb500.position_samples.connect_to :type => :buffer,:size => 100 do |data, name|
 		gps.push( data.position, data.time ) if data
 		data
 	    end
@@ -202,7 +122,7 @@ class Eslam
 
 	odometry = @result.add(:odometry)
 	orientation = @result.add(:orientation)
-	@log_replay.odometry.odometry_samples.connect_to :type => :buffer,:size => 100 do |data, name|
+	@replay.log.odometry.odometry_samples.connect_to :type => :buffer,:size => 100 do |data, name|
 	    if data
 		@odometry_offset ||= @start_pos.position - data.position 
 		odometry_pos = data.position + @odometry_offset
@@ -214,30 +134,7 @@ class Eslam
     end
 
     def setup_transforms
-	# set the static transformation for the laser to body transform
-	headAngle = - Math::PI / 180.0 * 40.0
-	qhead2body = Eigen::Quaternion.from_angle_axis( headAngle, Eigen::Vector3.new( 1, 0, 0 ) )
-	thead2body = Eigen::Vector3.new( 0, 0.022, 0.1175 )
 
-	if @has_dynamixel
-	    add_static_transform( "laser", "tilt_head", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0.0, 0.006, 0.063 ) )
-	    add_static_transform( "tilt_head", "upper_dynamixel", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0, 0.0, -0.018 ) )
-	    add_static_transform( "lower_dynamixel", "head", Eigen::Quaternion.Identity, Eigen::Vector3.new( 0.0, 0.0, 0.099 ) )
-	    add_static_transform( "head", "body", qhead2body, thead2body )
-	else
-	    # use this if the dynamixel info is not available
-	    tlaser2head = Eigen::Vector3.new( 0.0, 0.0075, 0.145 )
-	    add_static_transform( "laser", "body", qhead2body, thead2body + qhead2body * tlaser2head )
-	end
-    end
-
-    def add_static_transform( source, target, orientation, position )
-	trans = Types::Base::Samples::RigidBodyState.new
-	trans.sourceFrame = source 
-	trans.targetFrame = target 
-	trans.orientation = orientation 
-	trans.position = position 
-	@eslam.static_transformations.write trans
     end
 
     def run
@@ -247,30 +144,38 @@ class Eslam
 	    @eslam = p.task('eslam')
 	    #Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
-	    @log_replay = Orocos::Log::Replay.open( @log_dir )
-	    @log_replay.hokuyo.scans.connect_to( @eslam.scan_samples, :type => :buffer, :size => 1000 ) 
-	    @log_replay.odometry.odometry_samples.connect_to( @eslam.orientation_samples, :type => :buffer, :size => 1000 )
-	    @log_replay.odometry.bodystate_samples.connect_to( @eslam.bodystate_samples, :type => :buffer, :size => 1000 )
-	    @has_gps = false
-	    if @log_replay.mb500.has_port? :position_samples # and false
-		@log_replay.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
-		@has_gps = true
+	    @replay = Asguard::Replay.new( @log_dir )
+	    @replay.disable :gps
+	    tf = Asguard::Transform.new
+	    tf.use :dynamixel if @replay.has? :dynamixel 
+	    tf.setup_filters @replay
+
+	    @replay.log.hokuyo.scans.connect_to( @eslam.scan_samples, :type => :buffer, :size => 1000 ) 
+	    @replay.log.odometry.odometry_samples.connect_to( @eslam.orientation_samples, :type => :buffer, :size => 1000 )
+	    @replay.log.odometry.bodystate_samples.connect_to( @eslam.bodystate_samples, :type => :buffer, :size => 1000 )
+	    
+	    if @replay.use? :gps 
+		@replay.log.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
 		puts "INFO: Using GPS Position data for reference."
+	    else
+		@replay.log.odometry.odometry_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 1000 )
 	    end
-	    @has_dynamixel = false
-	    if @log_replay.has_task? :dynamixel and @log_replay.dynamixel.has_port? :lowerDynamixel2UpperDynamixel
-		@log_replay.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
-		@has_dynamixel = true
+	    if @replay.use? :dynamixel
+		@replay.log.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
 		puts "INFO: Using dynamic transformation chain for sensor head."
+	    end
+	    if @replay.use? :stereo 
+		@replay.log.dense_stereo.distance_frame.connect_to( @eslam.distance_frames, :type => :buffer, :size => 2 )
+		puts "INFO: Using distance images."
 	    end
 
 	    configure
-	    threshold = 0.5
+	    threshold = 1.5
 	    status_reader = @eslam.streamaligner_status.reader
 
 	    latest_time = nil
-	    @log_replay.align( :use_sample_time )
-	    @log_replay.time_sync do |current_time, actual_time_delta, required_time_delta|
+	    @replay.log.align( :use_sample_time )
+	    @replay.log.time_sync do |current_time, actual_time_delta, required_time_delta|
 		module_time = status_reader.read_new
 		if !module_time.nil?
 		    latest_time = module_time.latest_time
@@ -285,7 +190,7 @@ class Eslam
 
 	    @eslam.configure
 	    @eslam.start
-	    setup_transforms
+	    tf.configure_task @eslam
 
 	    start
 	end

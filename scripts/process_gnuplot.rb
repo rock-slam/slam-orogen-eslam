@@ -25,7 +25,7 @@ opts[:log_dir] = ARGV[0]
 class GpEslam < Eslam
     def start
 	if @opts[:interactive]
-	    Vizkit.control @log_replay
+	    Vizkit.control @replay.log
 	    Vizkit.exec
 	else
 	    super
