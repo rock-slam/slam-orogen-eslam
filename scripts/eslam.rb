@@ -2,11 +2,13 @@ require 'vizkit'
 require 'orocos'
 require 'sequence_array'
 require 'asguard'
+require 'eslam_config'
 include Orocos
 
 Orocos.initialize
 
-class Eslam
+module Eslam
+class Replay
     def initialize( opts )
 	@opts = opts
 	@log_dir = opts[:log_dir]
@@ -30,66 +32,14 @@ class Eslam
 	puts "env_path: #{@environment_path}"
 	puts "start_pos: #{@start_pos.position}"
 	pp @errors
-	@configs.each do |c|
-	    pp c
-	end
+	pp @config
 	$> = prev
     end
 
-    def params
-	# store all configuration objects in this array
-	# for logging
-	@configs = {} 
-
-	# eslam_config
-	config = @eslam.eslam_config.dup
-	config.seed = @seed
-	config.mappingThreshold.distance = 0.02
-	config.mappingThreshold.angle = 3.0 * Math::PI/180.0
-	config.measurementThreshold.distance = 0.01
-	config.measurementThreshold.angle = 3.0 * Math::PI/180.0
-	config.initialError = 0.0
-	config.particleCount = 250
-	config.minEffective = 50
-	config.measurementError = 0.05
-	config.discountFactor = 0.95
-	config.spreadThreshold = 0.5
-	config.spreadTranslationFactor = 0.0001
-	config.spreadRotationFactor = 0.00005
-	config.slipFactor = 0.2
-	@configs[:eslam] = config
-
-	# odometry config
-	config = @eslam.odometry_config.dup
-	@eslam.odometry_config = config
-	config.seed = @seed
-	config.constError.translation = Eigen::Vector3.new( 0.0005, 0.0005, 0.0 )
-	config.constError.yaw = 0e-5 
-
-	config.distError.translation = Eigen::Vector3.new( 0.04, 0.10, 0.0 )
-	config.distError.yaw = 1e-4 
-
-	config.tiltError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
-	config.tiltError.yaw = 0.001
-
-	config.dthetaError.translation = Eigen::Vector3.new( 0.01, 0.01, 0.0 )
-	config.dthetaError.yaw = 0.001
-	@configs[:odometry] = config
-
-	# asguard config
-	config = @eslam.asguard_config.dup
-	@configs[:asguard] = config
-    end
-
     def configure
-	# initialize the @configs array with the parameters for 
-	# each of the configurations
-	params
-
-	# write configurations to module
-	@eslam.eslam_config = @configs[:eslam]
-	@eslam.odometry_config = @configs[:odometry] 
-	@eslam.asguard_config = @configs[:asguard] 
+	# configure the object
+	@config = Config.new @seed
+	@config.update @eslam, :mapping
 
 	@start_pos = @eslam.start_pose 
 	if @replay.use? :gps
@@ -170,7 +120,7 @@ class Eslam
 	    end
 
 	    configure
-	    threshold = 1.5
+	    threshold = 0.5
 	    status_reader = @eslam.streamaligner_status.reader
 
 	    latest_time = nil
@@ -265,4 +215,5 @@ class Eslam
 	end
 	@errors.each {|k,v| v[:mean_error] = v[:sum_error] / v[:count]}
     end
+end
 end

@@ -22,7 +22,8 @@ if ARGV.empty?
 end
 opts[:log_dir] = ARGV[0]
 
-class GpEslam < Eslam
+module Eslam
+class Gnuplot < Replay
     def start
 	if @opts[:interactive]
 	    Vizkit.control @replay.log
@@ -79,8 +80,9 @@ class GpEslam < Eslam
     end
 
 end
+end
 
-eslam = GpEslam.new( opts )
+eslam = Eslam::Gnuplot.new( opts )
 eslam.run
 if opts[:out_dir]
     eslam.save( opts[:out_dir] )

@@ -32,7 +32,8 @@ class Array
     def stdev; Math.sqrt( inject(0) { |sum,x| sum+(x-mean)**2 } / (size-1) ); end
 end
 
-class Batch < Eslam 
+module Eslam
+class Batch < Replay 
     def params
 	super 
 
@@ -93,6 +94,7 @@ class Batch < Eslam
 	end
     end
 end
+end
 
-eslam = Batch.new( opts )
+eslam = Eslam::Batch.new( opts )
 eslam.process
