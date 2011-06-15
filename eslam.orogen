@@ -29,6 +29,9 @@ task_context 'Task' do
     property('asguard_config', '/asguard/Configuration').
 	doc 'Configuration options for the asguard robot.'
 
+    property('calc_gmm', 'bool', false).
+	doc 'Optionally calculated the Guassian Mixture Model of the particle Distribution.'
+
     ##########################
     # environment parameters
     ##########################
