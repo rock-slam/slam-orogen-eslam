@@ -31,7 +31,6 @@ namespace eslam {
 	bool useScans;
 
 #ifdef DEBUG_VIZ
-	boost::shared_ptr<envire::Environment> vizEnv;
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
 	// transformer callbacks

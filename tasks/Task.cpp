@@ -124,47 +124,14 @@ void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs,
 		else
 		    map = el->grid.getMap();
 
-		if( map && !viz.getWidget()->isDirty() && vizEnv != env )
-		{
-		    // remove all previous maps
-		    std::vector<envire::MultiLevelSurfaceGrid*> vizGrids = vizEnv->getItems<envire::MultiLevelSurfaceGrid>();
-		    for( std::vector<envire::MultiLevelSurfaceGrid*>::iterator it = vizGrids.begin();
-			    it != vizGrids.end(); it++ )
-		    {
-			envire::FrameNode *fn = (*it)->getFrameNode();
-			while( fn && fn->isAttached() && (fn != vizEnv->getRootNode()) )
-			{
-			    envire::FrameNode* parent = fn->getParent();
-			    vizEnv->detachItem( fn );
-			    fn = parent;
-			}
-			vizEnv->detachItem( *it );
-		    }
 
-		    // replicate framenode
-		    envire::FrameNode* fn = new envire::FrameNode( 
-			    env->relativeTransform( map->getFrameNode(), map->getEnvironment()->getRootNode() ) );
-		    vizEnv->addChild( vizEnv->getRootNode(), fn );
+		//std::cerr << "call to viewmap" << std::endl;
+		viz.getWidget()->viewMap( map );
 
-		    // copy grids from the best map to the visualization environment
-		    for( std::vector<envire::MultiLevelSurfaceGrid::Ptr>::iterator it = map->grids.begin();
-			    it != map->grids.end(); it++ )
-		    {
-			// create a new mls map in the viz environment
-			envire::MultiLevelSurfaceGrid *vizGrid = (*it)->clone();
-			envire::FrameNode *mapNode = (*it)->getFrameNode()->clone();
-			vizEnv->addChild( fn, mapNode );
-			vizEnv->setFrameNode( vizGrid, mapNode );
-			fn = mapNode;
-		    }
-
-		    viz.getWidget()->setDirty();
-		    /*
-		       envire::GraphViz viz;
-		       viz.writeToFile( vizEnv.get(), "/tmp/vizEnv.dot" );
-		       viz.writeToFile( env.get(), "/tmp/env.dot" );
-		       */
-		}
+		/*
+		   envire::GraphViz viz;
+		   viz.writeToFile( env.get(), "/tmp/env.dot" );
+		   */
 	    }
 	}
 #endif
@@ -204,12 +171,7 @@ bool Task::configureHook()
     if( _debug_viz.value() )
     {
 	viz.start();
-
-	if( useShared )
-	    vizEnv = env;
-	else
-	    vizEnv = boost::shared_ptr<envire::Environment>( new envire::Environment() );
-	viz.getWidget()->setEnvironment( vizEnv.get() );
+	viz.getWidget()->setEnvironment( env.get() );
     }
 #endif
 
