@@ -12,4 +12,5 @@
   <depend package="base/types"/>
   <depend package="asguard/eslam"/>
   <depend package="slam/envire"/>
+  <depend package="image_processing/dense_stereo"/>
 </package>
