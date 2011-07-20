@@ -13,7 +13,10 @@ class Replay
 	@opts = opts
 	@log_dir = opts[:log_dir]
 	@environment_path = opts[:env_dir]
+	@config_name = opts[:configuration].to_sym || :mapping
 	@seed = 42
+
+	puts @config_name
     end
 
     def start
@@ -39,7 +42,7 @@ class Replay
     def configure
 	# configure the object
 	@config = Config.new @seed
-	@config.update @eslam, :mapping
+	@config.update @eslam, @config_name 
 
 	@start_pos = @eslam.start_pose 
 	if @replay.use? :gps
@@ -49,6 +52,8 @@ class Replay
 	    @start_pos.position -= antenna_correction( @start_pos.orientation )
 	    @eslam.start_pose = @start_pos
 	end
+
+	@eslam.calc_gmm = true
 
 	# set environment path if available
 	@eslam.environment_path = @environment_path if @environment_path 
@@ -95,7 +100,7 @@ class Replay
 	    #Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
 	    @replay = Asguard::Replay.new( @log_dir )
-	    @replay.disable :gps
+	    #@replay.disable :gps
 	    tf = Asguard::Transform.new
 	    tf.use :dynamixel if @replay.has? :dynamixel 
 	    tf.setup_filters @replay

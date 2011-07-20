@@ -10,6 +10,7 @@ p = OptionParser.new do |o|
     o.on("-o", "--out=PATH", "Output directory (will be created)") {|v| opts[:out_dir] = v }
     o.on("-d", "--debug_viz", "Use visualization for debugging") {|v| opts[:debug] = v }
     o.on("-i", "--interactive", "Use interactive controlls for replay") {|v| opts[:interactive] = v }
+    o.on("-c", "--configuration=NAME", "Name of the configuration to use") {|v| opts[:configuration] = v }
     o.on("-h", "--help", "Show this message") do
 	puts o
 	exit
