@@ -136,6 +136,9 @@ class Replay
 		    latest_time = module_time.latest_time
 		end
 
+		@re_start_time ||= current_time
+		@re_stop_time = current_time
+
 		if latest_time and latest_time + threshold < current_time
 		    0.01
 		else
@@ -147,8 +150,15 @@ class Replay
 	    @eslam.start
 	    tf.configure_task @eslam
 
+	    @pr_start_time = Time.now
+
 	    start
 	end
+
+	@pr_stop_time = Time.now
+
+	puts "\nruntime: #{@pr_stop_time-@pr_start_time}"
+	puts "logtime: #{@re_stop_time-@re_start_time}"
 
 	correct_result
 	calc_error
