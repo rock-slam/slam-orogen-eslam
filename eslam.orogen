@@ -12,7 +12,7 @@ import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
-import_types_from "StreamAlignerStatus.hpp"
+import_types_from "aggregator"
 
 task_context 'Task' do
     needs_configuration

@@ -8,7 +8,7 @@
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
 
-#include <PullStreamAligner.hpp>
+#include <aggregator/PullStreamAligner.hpp>
 
 #ifdef DEBUG_VIZ
 #include <vizkit/EslamWidget.hpp>
