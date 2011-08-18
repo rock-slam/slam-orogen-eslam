@@ -42,7 +42,7 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
     updateFilterInfo( ts, bodystate_samples_sample, centroid, updated  );
 }
 
-void Task::distance_framesTransformerCallback(const base::Time &ts, const ::dense_stereo::distance_image &distance_frames_sample)
+void Task::distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample)
 {
     //throw std::runtime_error("Transformer callback for distance_frames not implemented");
     Eigen::Affine3d body2odometry, lcamera2body;

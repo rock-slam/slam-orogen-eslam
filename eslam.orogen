@@ -63,7 +63,7 @@ task_context 'Task' do
     # i/o ports 
     ##########################
 
-    input_port('distance_frames', '/dense_stereo/distance_image').
+    input_port('distance_frames', '/base/samples/DistanceImage').
 	needs_reliable_connection.
 	doc 'distance images'
 
