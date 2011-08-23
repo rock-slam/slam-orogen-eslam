@@ -6,7 +6,6 @@ using_library 'envire'
 using_library 'asguard'
 
 import_types_from 'base'
-import_types_from 'dense_stereo'
 import_types_from "asguard/BodyState.hpp"
 import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
