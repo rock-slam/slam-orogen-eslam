@@ -203,12 +203,6 @@ void Task::updateHook()
 	transformer.pushDynamicTransformation( body2odometry );
 
     TaskBase::updateHook();
-
-    // only write output if the aggregator actually had some data
-    // this is slightly implicit, and could be made more explicit in
-    // the aggregator
-    if( transformer.getStatus().latest_time > base::Time() )
-	_streamaligner_status.write( transformer.getStatus() );
 }
 
 // void Task::errorHook()

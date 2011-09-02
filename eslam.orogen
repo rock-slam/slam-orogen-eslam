@@ -45,13 +45,6 @@ task_context 'Task' do
 	doc 'if set to true, the module will display the current environment for debugging.'
 
     ##########################
-    # aggregator parameters
-    ##########################
-
-    output_port('streamaligner_status', '/aggregator/StreamAlignerStatus').
-	doc 'Provides debug information on the state of the StreamAligner'
-
-    ##########################
     # filter parameters
     ##########################
 

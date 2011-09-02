@@ -126,25 +126,25 @@ class Replay
 
 	    configure
 	    threshold = 0.5
-	    status_reader = @eslam.streamaligner_status.reader
+	    status_reader = @eslam.transformer_status.reader
 
 	    latest_time = nil
 	    @replay.log.align( :use_sample_time )
-	    @replay.log.time_sync do |current_time, actual_time_delta, required_time_delta|
-		module_time = status_reader.read_new
-		if !module_time.nil?
-		    latest_time = module_time.latest_time
-		end
-
-		@re_start_time ||= current_time
-		@re_stop_time = current_time
-
-		if latest_time and latest_time + threshold < current_time
-		    0.01
-		else
-		    0
-		end
-	    end
+#	    @replay.log.time_sync do |current_time, actual_time_delta, required_time_delta|
+#		module_time = status_reader.read_new
+#		if !module_time.nil?
+#		    latest_time = module_time.latest_time
+#		end
+#
+#		@re_start_time ||= current_time
+#		@re_stop_time = current_time
+#
+#		if latest_time and latest_time + threshold < current_time
+#		    0.01
+#		else
+#		    0
+#		end
+#	    end
 
 	    @eslam.configure
 	    @eslam.start
