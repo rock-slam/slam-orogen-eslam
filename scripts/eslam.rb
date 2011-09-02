@@ -6,6 +6,7 @@ require 'eslam_config'
 include Orocos
 
 Orocos.initialize
+Orocos::Log.logger.level = Logger::WARN
 
 module Eslam
 class Replay
@@ -13,10 +14,11 @@ class Replay
 	@opts = opts
 	@log_dir = opts[:log_dir]
 	@environment_path = opts[:env_dir]
-	@config_name = opts[:configuration].to_sym || :mapping
+	@config_name = :mapping
+	@config_name = opts[:configuration].to_sym if opts[:configuration] 
 	@seed = 42
 
-	puts @config_name
+	puts "INFO: using configuration #{@config_name}"
     end
 
     def start
@@ -120,7 +122,7 @@ class Replay
 		puts "INFO: Using dynamic transformation chain for sensor head."
 	    end
 	    if @replay.use? :stereo 
-		@replay.log.dense_stereo.distance_frame.connect_to( @eslam.distance_frames, :type => :buffer, :size => 2 )
+		@replay.log.stereo.distance_frame.connect_to( @eslam.distance_frames, :type => :buffer, :size => 2 )
 		puts "INFO: Using distance images."
 	    end
 
