@@ -200,7 +200,7 @@ void Task::updateHook()
     // this is to be backward compatible
     base::samples::RigidBodyState body2odometry;
     while( _orientation_samples.read( body2odometry ) == RTT::NewData )
-	transformer.pushDynamicTransformation( body2odometry );
+	_transformer.pushDynamicTransformation( body2odometry );
 
     TaskBase::updateHook();
 }
