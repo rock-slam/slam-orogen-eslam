@@ -96,8 +96,8 @@ class Replay
 
     def run
 	# This will kill processes when we quit the block
-	#Orocos::Process.spawn('eslam_test', :valgrind => true, :valgrind_options => ["--track-origins=yes"] ) do |p|
-	Orocos::Process.spawn('eslam_test') do |p|
+	#Orocos::Process.run('eslam_test', :valgrind => true, :valgrind_options => ["--track-origins=yes"] ) do |p|
+	Orocos::Process.run('eslam_test') do |p|
 	    @eslam = p.task('eslam')
 	    #Orocos.log_all_ports #( {:log_dir => ARGV[0]} )
 
