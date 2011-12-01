@@ -23,12 +23,6 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
     // write result to output port
     base::Affine3d centroid = filter->getCentroid();
 
-    base::samples::RigidBodyState res_rbs;
-    res_rbs.time = ts;
-    res_rbs.setTransform( centroid );
-
-    _pose_samples.write( res_rbs );
-
     // record bodystate and orientation when an update 
     // has occured. this is mainly for visualizing purposes,
     // so to capture the updated state.
@@ -39,7 +33,16 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
     }
 
     // update debug information
+    // this may updated the centroid depending on configuration
     updateFilterInfo( ts, bodystate_samples_sample, centroid, updated  );
+
+    // write the centroid to the output port as the current best guess
+    base::samples::RigidBodyState res_rbs;
+    res_rbs.time = ts;
+    res_rbs.setTransform( centroid );
+
+    _pose_samples.write( res_rbs );
+
 }
 
 void Task::distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample)
@@ -66,7 +69,7 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
     }
 }
 
-void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, const base::Affine3d& centroid, bool updated )
+void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, base::Affine3d& centroid, bool updated )
 {
 #ifndef DEBUG_VIZ
     if( _pose_distribution.connected() )
@@ -95,6 +98,25 @@ void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs,
 	    em.initialize( 5, em_pars, em_weights );
 	    em.run( 1e-5, 10 );
 	    pd.gmm.params.swap( em.gmm.params );
+
+
+	    /*
+	    // take the largest of the gaussians and use it as the new centroid
+	    int max_idx = -1;
+	    int max_weight = 0;
+	    for( size_t i=0; i < pd.gmm.params.size(); i++ )
+	    {
+		if( pd.gmm.params[i].weight > max_weight )
+		{
+		    max_idx = i;
+		    max_weight = pd.gmm.params[i].weight;
+		}
+	    }
+	    if( max_idx >=0 )
+	    {
+		centroid.matrix().topRightCorner<2,1>() = pd.gmm.params[max_idx].dist.mean;
+	    }
+	    */
 	}
 
 	if( _pose_distribution.connected() )
@@ -124,8 +146,6 @@ void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs,
 		else
 		    map = el->grid.getMap();
 
-
-		//std::cerr << "call to viewmap" << std::endl;
 		viz.getWidget()->viewMap( map );
 
 		/*

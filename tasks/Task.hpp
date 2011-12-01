@@ -39,7 +39,7 @@ namespace eslam {
         virtual void scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample);
 
 	/// update mainly debug information and the state of the filter
-	void updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, const base::Affine3d& centroid, bool updated );
+	void updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, base::Affine3d& centroid, bool updated );
 
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
