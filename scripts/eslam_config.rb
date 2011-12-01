@@ -15,12 +15,14 @@ module Eslam
 	    @config[:eslam] = task.eslam_config.dup
 	    @config[:odometry] = task.odometry_config.dup
 	    @config[:asguard] = task.asguard_config.dup 
+	    @config[:hash] = task.hash_config.dup 
 	end
 
 	def to_task task
 	    task.eslam_config = @config[:eslam]
 	    task.odometry_config = @config[:odometry] 
 	    task.asguard_config = @config[:asguard] 
+	    task.hash_config = @config[:hash] 
 	end
 
 	def pretty_print pp
@@ -60,6 +62,14 @@ module Eslam
 	    c.tiltError.yaw = 0.001
 	    c.dthetaError.translation = Eigen::Vector3.new( 0.05, 0.01, 0.0 )
 	    c.dthetaError.yaw = 0.005
+
+	    c = @config[:hash]
+	    c.useHash = true
+	    c.period = 20
+	    c.percentage = 0.05
+	    c.avgFactor = 0.8
+	    c.slopeBins = 20
+	    c.angularSteps = 16 
 	end
 
 	def mapping 

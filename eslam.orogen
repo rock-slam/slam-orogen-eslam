@@ -31,6 +31,9 @@ task_context 'Task' do
     property('calc_gmm', 'bool', false).
 	doc 'Optionally calculated the Guassian Mixture Model of the particle Distribution.'
 
+    property('hash_config', '/eslam/SurfaceHashConfig').
+	doc 'Option to calculate the hash for a given environment and use it to spawn new random particles'
+
     ##########################
     # environment parameters
     ##########################

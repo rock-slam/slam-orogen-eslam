@@ -203,7 +203,7 @@ bool Task::configureHook()
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
     std::cerr << "starting at position " << pose.position.transpose() << std::endl;
-    filter->init( env.get(), pose, useShared );
+    filter->init( env.get(), pose, useShared, _hash_config.value() );
 
     std::cerr << "initialized" << std::endl;
 
