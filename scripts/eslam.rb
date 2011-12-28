@@ -130,9 +130,9 @@ class Replay
 
 	    @replay.log.align( :use_sample_time )
 
+	    tf.configure_task @eslam
 	    @eslam.configure
 	    @eslam.start
-	    tf.configure_task @eslam
 
 	    @pr_start_time = Time.now
 
