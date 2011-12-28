@@ -212,7 +212,7 @@ bool Task::configureHook()
 
 bool Task::startHook()
 {
-    return true;
+    return TaskBase::startHook();
 }
 
 void Task::updateHook()
