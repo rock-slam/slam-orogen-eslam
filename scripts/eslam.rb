@@ -110,6 +110,7 @@ class Replay
 	    @replay.log.hokuyo.scans.connect_to( @eslam.scan_samples, :type => :buffer, :size => 1000 ) 
 	    @replay.log.odometry.odometry_samples.connect_to( @eslam.orientation_samples, :type => :buffer, :size => 1000 )
 	    @replay.log.odometry.bodystate_samples.connect_to( @eslam.bodystate_samples, :type => :buffer, :size => 1000 )
+	    @replay.log.camera_right.frame.connect_to( @eslam.terrain_classification_frames, :type => :buffer, :size => 1000 )
 	    
 	    if @replay.use? :gps 
 		@replay.log.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
