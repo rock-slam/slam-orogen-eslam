@@ -38,8 +38,10 @@ namespace eslam {
         virtual void distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample);
         virtual void scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample);
         virtual void terrain_classification_framesTransformerCallback(const base::Time &ts, const ::base::samples::frame::Frame &terrain_classification_frames_sample);
+        virtual void terrain_classification_wheelTransformerCallback(const base::Time &ts, const ::terrain_estimator::TerrainClassification &terrain_classification_wheel_sample);
 
-	// store last terrain classification time
+	// store last terrain classifications 
+	std::vector<terrain_estimator::TerrainClassification> terrainClassificationWheel;
 	base::samples::frame::Frame terrainClassificationFrame;
 
 	/// update mainly debug information and the state of the filter

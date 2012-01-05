@@ -18,7 +18,7 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
 	return;
 
     // call the filter with the bodystate
-    bool updated = filter->update( body2odometry, bodystate_samples_sample ); 
+    bool updated = filter->update( body2odometry, bodystate_samples_sample, terrainClassificationWheel ); 
 
     // write result to output port
     base::Affine3d centroid = filter->getCentroid();
@@ -28,6 +28,9 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::as
     // so to capture the updated state.
     if( updated )
     {
+	// also clear the terrain classification data collected so far
+	terrainClassificationWheel.clear();
+
 	update_orientation = body2odometry.linear();
 	update_bodystate = bodystate_samples_sample;
     }
@@ -50,6 +53,17 @@ void Task::terrain_classification_framesTransformerCallback(const base::Time &ts
     // just store the sample and process in other callback
     terrainClassificationFrame = terrain_classification_frames_sample;
 }
+
+void Task::terrain_classification_wheelTransformerCallback(const base::Time &ts, const ::terrain_estimator::TerrainClassification &terrain_classification_wheel_sample)
+{
+    // the terrain classification data is stored in a vector, which gets
+    // cleared when the filter has processed the data this means, that the data
+    // might by slightly out of sync. Since the data is very rough anyway, this
+    // should be ok.  The alternative would be to perform an asynchronous
+    // filter update, which is more costly.
+    terrainClassificationWheel.push_back( terrain_classification_wheel_sample );
+}
+
 
 void Task::distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample)
 {

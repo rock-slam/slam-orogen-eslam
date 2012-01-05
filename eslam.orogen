@@ -6,6 +6,7 @@ using_library 'envire'
 using_library 'asguard'
 
 import_types_from 'base'
+import_types_from 'terrain_estimator'
 import_types_from "asguard/BodyState.hpp"
 import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
@@ -66,6 +67,10 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc '(optional) image frames with visual terrain classification given in the reference frame of the distance images. Need to be in sync with the distance frames.'
 
+    input_port('terrain_classification_wheel', '/terrain_estimator/TerrainClassification').
+	needs_reliable_connection.
+	doc '(optional) proprioceptive terrain classification data.'
+
     input_port('scan_samples', '/base/samples/LaserScan').
 	needs_reliable_connection.
 	doc 'timestamped laser scans'
@@ -101,6 +106,7 @@ task_context 'Task' do
 
 	align_port("scan_samples", 0.02) 
 	align_port("terrain_classification_frames", 0.1)
+	align_port("terrain_classification_wheel", 0.0)
 	align_port("distance_frames", 0.1)
 	align_port("bodystate_samples", 0.01)
     end

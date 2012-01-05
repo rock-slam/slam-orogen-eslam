@@ -9,6 +9,7 @@
   </copyright>
   <license>LGPL v2 or later</license>
 
+  <depend package="asguard/orogen/terrain_estimator" />
   <depend package="drivers/orogen/transformer" />
   <depend package="base/types"/>
   <depend package="asguard/eslam"/>
