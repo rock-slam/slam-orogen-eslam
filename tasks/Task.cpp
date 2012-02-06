@@ -184,8 +184,7 @@ bool Task::configureHook()
     if( !_environment_path.value().empty() )
     {
 	std::cout << "loading environment: " << _environment_path.value() << std::endl;
-	envire::Serialization so;
-	env = boost::shared_ptr<envire::Environment>( so.unserialize( _environment_path.value() ) );
+	env = boost::shared_ptr<envire::Environment>( envire::Environment::unserialize( _environment_path.value() ) );
 	useScans = false;
 	useShared = true;
     }
@@ -242,8 +241,7 @@ void Task::stopHook()
     // write environment, if path is given
     if( !_environment_debug_path.value().empty() )
     {
-	envire::Serialization so;
-	so.serialize(env.get(), _environment_debug_path.value() );
+        env->serialize(_environment_debug_path.value() );
     }
 }
 
