@@ -11,7 +11,7 @@ Task::Task(std::string const& name)
 {
 }
 
-void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::asguard::BodyState &bodystate_samples_sample)
+void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
 {
     Eigen::Affine3d body2odometry;
     if( !_body2odometry.get( ts, body2odometry ) )
@@ -91,7 +91,7 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
     }
 }
 
-void Task::updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, base::Affine3d& centroid, bool updated )
+void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState& bs, base::Affine3d& centroid, bool updated )
 {
 #ifndef DEBUG_VIZ
     if( _pose_distribution.connected() )

@@ -26,7 +26,7 @@ namespace eslam {
 
 	// debug temporaries
 	Eigen::Quaterniond update_orientation;
-	asguard::BodyState update_bodystate; 
+	eslam::BodyContactState update_bodystate; 
 	// derived configuration variable 
 	bool useScans;
 
@@ -34,7 +34,7 @@ namespace eslam {
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 #endif
 	// transformer callbacks
-        virtual void bodystate_samplesTransformerCallback(const base::Time &ts, const ::asguard::BodyState &bodystate_samples_sample);
+        virtual void bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample);
         virtual void distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample);
         virtual void scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample);
         virtual void terrain_classification_framesTransformerCallback(const base::Time &ts, const ::base::samples::frame::Frame &terrain_classification_frames_sample);
@@ -45,7 +45,7 @@ namespace eslam {
 	base::samples::frame::Frame terrainClassificationFrame;
 
 	/// update mainly debug information and the state of the filter
-	void updateFilterInfo( const base::Time& ts, const asguard::BodyState& bs, base::Affine3d& centroid, bool updated );
+	void updateFilterInfo( const base::Time& ts, const eslam::BodyContactState& bs, base::Affine3d& centroid, bool updated );
 
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW

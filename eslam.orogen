@@ -10,6 +10,7 @@ import_types_from 'terrain_estimator'
 import_types_from "asguard/BodyState.hpp"
 import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
+import_types_from "eslam/ContactState.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
 import_types_from "aggregator"
@@ -75,7 +76,7 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'timestamped laser scans'
 
-    input_port('bodystate_samples', '/asguard/BodyState').
+    input_port('bodystate_samples', '/eslam/BodyContactState').
 	needs_reliable_connection.
 	doc 'timestamped samples providing the configuration state of the robot.'
 
