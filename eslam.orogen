@@ -2,6 +2,7 @@ name 'eslam'
 version 0.1
 
 using_library 'eslam'
+using_library 'eslam-viz'
 using_library 'envire'
 using_library 'asguard'
 
