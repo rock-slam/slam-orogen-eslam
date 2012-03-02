@@ -7,6 +7,7 @@
 #include <eslam/EmbodiedSlamFilter.hpp>
 #include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
+#include <vizkit/MapVizEventFilter.hpp>
 
 #include <aggregator/PullStreamAligner.hpp>
 
@@ -15,7 +16,42 @@
 #include <vizkit/QtThreadedWidget.hpp>
 #endif
 
+namespace envire
+{
+    class BinaryEventDispatcher : public SynchronizationEventHandler
+    {
+        RTT::OutputPort<EnvireBinaryEvent> &port;
+	Environment *env;
+	vizkit::MapVizEventFilter mapFilter;
+
+    public:
+	BinaryEventDispatcher( RTT::OutputPort<EnvireBinaryEvent> &port, Environment* env )
+	    : port( port ), env( env )
+	{
+	    // set the filter which allows only one of the many maps to go through
+	    // this is very eslam specific
+	    setFilter( &mapFilter );
+
+	    // register this class as event handler for environment
+	    env->addEventHandler( this );
+	}
+
+	void handle( EnvireBinaryEvent* binary_event )
+	{
+	    // for now, lets write directly to the port and
+	    // don't do any event queueing
+	    port.write( *binary_event );
+	}
+
+	void viewMap( envire::MLSMap* map )
+	{
+	    mapFilter.viewMap( map );
+	}
+    };
+}
+
 namespace eslam {
+
     class Task : public TaskBase
     {
 	friend class TaskBase;
@@ -29,6 +65,8 @@ namespace eslam {
 	eslam::BodyContactState update_bodystate; 
 	// derived configuration variable 
 	bool useScans;
+
+	envire::BinaryEventDispatcher* envireEventDispatcher;
 
 #ifdef DEBUG_VIZ
 	QtThreadedWidget<vizkit::EslamWidget> viz;

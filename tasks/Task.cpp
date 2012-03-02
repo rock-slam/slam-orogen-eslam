@@ -7,8 +7,9 @@
 using namespace eslam;
 
 Task::Task(std::string const& name)
-    : TaskBase(name)
+    : TaskBase(name), envireEventDispatcher(NULL)
 {
+    _start_pose.value().invalidate();
 }
 
 void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
@@ -171,6 +172,8 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 		    map = el->grid.getMap();
 
 		viz.getWidget()->viewMap( map );
+		if( envireEventDispatcher )
+		    envireEventDispatcher->viewMap( map );
 
 		/*
 		   envire::GraphViz viz;
@@ -235,7 +238,20 @@ bool Task::configureHook()
 
 bool Task::startHook()
 {
-    return TaskBase::startHook();
+    if( !TaskBase::startHook() )
+	return false;
+
+    //if( _envire_data.connected() )
+    {
+	assert( env );
+	std::cout << "attaching EventDispatcher" << std::endl;
+
+	// register the binary event dispatcher, 
+	// which will write envire data to a port
+	envireEventDispatcher = new envire::BinaryEventDispatcher( _envire_data, env.get() );
+    }
+
+    return true;
 }
 
 void Task::updateHook()
@@ -254,6 +270,8 @@ void Task::updateHook()
 
 void Task::stopHook()
 {
+    delete envireEventDispatcher;
+
     // write environment, if path is given
     if( !_environment_debug_path.value().empty() )
     {

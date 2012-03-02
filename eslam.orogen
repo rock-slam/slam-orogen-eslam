@@ -15,6 +15,7 @@ import_types_from "eslam/ContactState.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
 import_types_from "aggregator"
+import_types_from "envire/core/EventTypes.hpp"
 
 task_context 'Task' do
     needs_configuration
@@ -49,6 +50,9 @@ task_context 'Task' do
 
     property('debug_viz', 'bool', false).
 	doc 'if set to true, the module will display the current environment for debugging.'
+
+    output_port('envire_data', '/envire/EnvireBinaryEvent').
+	doc 'events that contain envire data and can be used to visualize or log environment data over time.'
 
     ##########################
     # filter parameters
