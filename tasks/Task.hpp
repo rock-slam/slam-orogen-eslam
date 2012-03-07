@@ -23,6 +23,7 @@ namespace envire
         RTT::OutputPort<EnvireBinaryEvent> &port;
 	Environment *env;
 	vizkit::MapVizEventFilter mapFilter;
+	base::Time time;
 
     public:
 	BinaryEventDispatcher( RTT::OutputPort<EnvireBinaryEvent> &port, Environment* env )
@@ -38,6 +39,9 @@ namespace envire
 
 	void handle( EnvireBinaryEvent* binary_event )
 	{
+	    // set the current timestamp
+	    binary_event->time = time;
+
 	    // for now, lets write directly to the port and
 	    // don't do any event queueing
 	    port.write( *binary_event );
@@ -46,6 +50,11 @@ namespace envire
 	void viewMap( envire::MLSMap* map )
 	{
 	    mapFilter.viewMap( map );
+	}
+
+	void setTime( base::Time time )
+	{
+	    this->time = time;
 	}
     };
 }

@@ -18,6 +18,9 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
     if( !_body2odometry.get( ts, body2odometry ) )
 	return;
 
+    // set timestamp for envire eventdispatcher
+    envireEventDispatcher->setTime( ts );
+
     // call the filter with the bodystate
     bool updated = filter->update( body2odometry, bodystate_samples_sample, terrainClassificationWheel ); 
 
