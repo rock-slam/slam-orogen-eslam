@@ -49,6 +49,8 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
     res_rbs.sourceFrame = _body_frame.get();
     res_rbs.targetFrame = _world_frame.get();
     res_rbs.setTransform( centroid );
+    res_rbs.sourceFrame = "body";
+    res_rbs.targetFrame = "world";
 
     _pose_samples.write( res_rbs );
 
