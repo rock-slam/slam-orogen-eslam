@@ -26,9 +26,21 @@ class PositionPlot
 	@plots[sym][:pos] = [[],[]]
 	@plots[sym][:error] = [[],[]]
 	@plots[sym].merge!( params )
+	if params[:period]
+	    @plots[sym][:idx] = 0
+	end
     end
 
     def data( sym, pos, error = nil )
+	# skip datasamples if a period is given
+	# and we are not at the start of it
+	period = @plots[sym][:period] 
+	if period 
+	    mod = @plots[sym][:idx].modulo( period ) 
+	    @plots[sym][:idx] += 1 
+	    return if mod != 0
+	end
+
 	@plots[sym][:pos][0] << pos[0]
 	@plots[sym][:pos][1] << pos[1]
 	if error
