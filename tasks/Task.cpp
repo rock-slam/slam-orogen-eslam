@@ -42,6 +42,8 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
     // write the centroid to the output port as the current best guess
     base::samples::RigidBodyState res_rbs;
     res_rbs.time = ts;
+    res_rbs.sourceFrame = _body_frame.get();
+    res_rbs.targetFrame = _world_frame.get();
     res_rbs.setTransform( centroid );
 
     _pose_samples.write( res_rbs );

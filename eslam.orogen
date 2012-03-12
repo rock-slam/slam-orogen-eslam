@@ -89,6 +89,8 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'you can provide a reference pose here for debug purposes.'
 
+    property('world_frame', 'std/string', 'world')
+
     output_port('pose_samples', '/base/samples/RigidBodyState').
 	doc 'timestamped samples of the particle filters pose centroid.'
 
