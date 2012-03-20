@@ -12,6 +12,12 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
+void Task::cloneMap()
+{
+    envire::EnvireBinaryEvent mapDump;
+    _map.write(mapDump);
+}
+
 void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
 {
     Eigen::Affine3d body2odometry;

@@ -101,6 +101,12 @@ task_context 'Task' do
     output_port('pose_distribution', '/eslam/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
 
+    operation('cloneMap').
+	doc("Dumps the currently best map on the map output port")
+
+    output_port('map', '/envire/EnvireBinaryEvent').
+	doc 'a dump of currently most likely map'
+
     ##########################
     # transformer
     ##########################
