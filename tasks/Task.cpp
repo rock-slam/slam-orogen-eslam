@@ -18,7 +18,7 @@ void Task::cloneMap()
     _map.write(mapDump);
 }
 
-void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
+void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample)
 {
     Eigen::Affine3d body2odometry;
     if( !_body2odometry.get( ts, body2odometry ) )
@@ -28,7 +28,7 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
     envireEventDispatcher->setTime( ts );
 
     // call the filter with the bodystate
-    bool updated = filter->update( body2odometry, bodystate_samples_sample, terrainClassificationWheel ); 
+    bool updated = filter->update( body2odometry, lastContactState, terrainClassificationWheel ); 
 
     // write result to output port
     base::Affine3d centroid = filter->getCentroid();
@@ -42,12 +42,12 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
 	terrainClassificationWheel.clear();
 
 	update_orientation = body2odometry.linear();
-	update_bodystate = bodystate_samples_sample;
+	update_bodystate = lastContactState;
     }
 
     // update debug information
     // this may updated the centroid depending on configuration
-    updateFilterInfo( ts, bodystate_samples_sample, centroid, updated  );
+    updateFilterInfo( ts, lastContactState, centroid, updated  );
 
     // write the centroid to the output port as the current best guess
     base::samples::RigidBodyState res_rbs;
@@ -60,6 +60,11 @@ void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::es
 
     _pose_samples.write( res_rbs );
 
+}
+
+void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
+{
+    lastContactState = bodystate_samples_sample;
 }
 
 void Task::terrain_classification_framesTransformerCallback(const base::Time &ts, const ::base::samples::frame::Frame &terrain_classification_frames_sample)
@@ -267,11 +272,6 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    // this is to be backward compatible
-    base::samples::RigidBodyState body2odometry;
-    while( _orientation_samples.read( body2odometry ) == RTT::NewData )
-	_transformer.pushDynamicTransformation( body2odometry );
-
     TaskBase::updateHook();
 }
 

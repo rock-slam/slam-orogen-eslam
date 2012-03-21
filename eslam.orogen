@@ -118,6 +118,7 @@ task_context 'Task' do
 	transformation("lcamera", "body")
 	transformation("body", "odometry")
 
+	align_port("orientation_samples", 0.01) 
 	align_port("scan_samples", 0.02) 
 	align_port("terrain_classification_frames", 0.1)
 	align_port("terrain_classification_wheel", 0.0)
@@ -125,7 +126,7 @@ task_context 'Task' do
 	align_port("bodystate_samples", 0.01)
     end
 
-    port_driven
+    port_driven "orientation_samples"
 end
 
 deployment "eslam_test" do
