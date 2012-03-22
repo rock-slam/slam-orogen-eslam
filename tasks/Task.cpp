@@ -1,6 +1,7 @@
 #include "Task.hpp"
 #include <algorithm>
 
+#include <envire/operators/MergeMLS.hpp>
 #include <envire/tools/GraphViz.hpp>
 #include <eslam/ExpectationMaximization.hpp>
 
@@ -12,10 +13,60 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
-void Task::cloneMap()
+void Task::cloneMap( const std::string& file )
 {
-    envire::EnvireBinaryEvent mapDump;
-    _map.write(mapDump);
+    // this function will first find the particle with
+    // the heighest weight, then merge all the individual grids
+    // into one compound grid, copied to a new environment
+    // and then either dumped to file or written to the
+    // output port
+    assert( !filter->getParticles().empty() );
+
+    // first get the map pointer to the best particle
+    envire::MLSMap::Ptr map = 
+	filter->getParticles()[filter->getBestParticleIndex()].grid.getMap();
+
+    // see if the map actually has any children (grids)
+    std::list<envire::Layer*> grids = env->getChildren( map.get() );
+    if( grids.empty() )
+	throw std::runtime_error("map does not contain any grids.");
+    // and get the resolution of the grid
+    envire::MLSGrid* firstGrid = dynamic_cast<envire::MLSGrid*>( grids.front() );
+    assert( firstGrid );
+    double resx = firstGrid->getScaleX();
+    double resy = firstGrid->getScaleY();
+
+    // get bounds of the map, and create a new grid based on this 
+    Eigen::AlignedBox<double,2> extents = map->getExtents();
+    envire::MLSGrid::Ptr target = 
+	new envire::MLSGrid( extents.sizes().x() / resx, extents.sizes().y() / resy, 
+		resx, resy, extents.min().x(), extents.min().y() );
+
+    // attach map 
+    envire::Environment *env = map->getEnvironment();
+    env->setFrameNode( target.get(), env->getRootNode() );
+
+    // setup and call merge operator
+    envire::MergeMLS::Ptr mergeOp = new envire::MergeMLS();
+    env->attachItem( mergeOp.get() );
+    mergeOp->addInput( map.get() );
+    mergeOp->addOutput( target.get() );
+    mergeOp->updateAll();
+
+    env->detachItem( target.get() );
+    env->detachItem( mergeOp.get() );
+
+    // generate new Environment and move target 
+    // mls to new environment
+    envire::Environment target_env;
+    target_env.setFrameNode( target.get(), target_env.getRootNode() );
+
+    if( !file.empty() )
+	target_env.unserialize( file );
+    else
+    {
+	throw std::runtime_error("write to port not yet supported.");
+    }
 }
 
 void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample)

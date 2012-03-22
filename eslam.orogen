@@ -102,7 +102,8 @@ task_context 'Task' do
 	doc 'timestamped particle distribution of the pose.'
 
     operation('cloneMap').
-	doc("Dumps the currently best map on the map output port")
+	argument( 'file', '/std/string', '' ).
+	doc("Dumps the currently best map on the map output port, or to a file if the file parameter is set.")
 
     output_port('map', '/envire/EnvireBinaryEvent').
 	doc 'a dump of currently most likely map'
