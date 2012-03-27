@@ -62,7 +62,7 @@ void Task::cloneMap( const std::string& file )
     target_env.setFrameNode( target.get(), target_env.getRootNode() );
 
     if( !file.empty() )
-	target_env.unserialize( file );
+	target_env.serialize( file );
     else
     {
 	throw std::runtime_error("write to port not yet supported.");
