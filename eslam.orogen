@@ -103,6 +103,7 @@ task_context 'Task' do
 
     operation('cloneMap').
 	argument( 'file', '/std/string', '' ).
+	argument( 'resolution', '/double', 0.05 ).
 	doc("Dumps the currently best map on the map output port, or to a file if the file parameter is set.")
 
     output_port('map', '/envire/EnvireBinaryEvent').

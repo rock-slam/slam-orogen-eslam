@@ -13,7 +13,7 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
-void Task::cloneMap( const std::string& file )
+void Task::cloneMap( const std::string& file, double res )
 {
     // this function will first find the particle with
     // the heighest weight, then merge all the individual grids
@@ -33,14 +33,13 @@ void Task::cloneMap( const std::string& file )
     // and get the resolution of the grid
     envire::MLSGrid* firstGrid = dynamic_cast<envire::MLSGrid*>( grids.front() );
     assert( firstGrid );
-    double resx = firstGrid->getScaleX();
-    double resy = firstGrid->getScaleY();
+    double source_res = std::min( firstGrid->getScaleX(), firstGrid->getScaleY() );
 
     // get bounds of the map, and create a new grid based on this 
     Eigen::AlignedBox<double,2> extents = map->getExtents();
     envire::MLSGrid::Ptr target = 
-	new envire::MLSGrid( extents.sizes().x() / resx, extents.sizes().y() / resy, 
-		resx, resy, extents.min().x(), extents.min().y() );
+	new envire::MLSGrid( extents.sizes().x() / res, extents.sizes().y() / res, 
+		res, res, extents.min().x(), extents.min().y() );
 
     // attach map 
     envire::Environment *env = map->getEnvironment();
@@ -51,6 +50,7 @@ void Task::cloneMap( const std::string& file )
     env->attachItem( mergeOp.get() );
     mergeOp->addInput( map.get() );
     mergeOp->addOutput( target.get() );
+    mergeOp->setReverse( res < source_res );
     mergeOp->updateAll();
 
     env->detachItem( target.get() );
