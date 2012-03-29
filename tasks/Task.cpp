@@ -4,6 +4,7 @@
 #include <envire/operators/MergeMLS.hpp>
 #include <envire/tools/GraphViz.hpp>
 #include <eslam/ExpectationMaximization.hpp>
+#include <envire/Orocos.hpp>
 
 using namespace eslam;
 
@@ -63,9 +64,11 @@ void Task::cloneMap( const std::string& file, double res )
 
     if( !file.empty() )
 	target_env.serialize( file );
-    else
+
+    if (_map.connected())
     {
-	throw std::runtime_error("write to port not yet supported.");
+        envire::OrocosEmitter emitter(&target_env, _map);
+        emitter.flush();
     }
 }
 

@@ -8,6 +8,7 @@ using_library 'asguard'
 
 import_types_from 'base'
 import_types_from 'terrain_estimator'
+import_types_from 'envire'
 import_types_from "asguard/BodyState.hpp"
 import_types_from "asguard/Configuration.hpp"
 import_types_from "eslam/Configuration.hpp"
@@ -15,7 +16,6 @@ import_types_from "eslam/ContactState.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
 import_types_from "aggregator"
-import_types_from "envire/core/EventTypes.hpp"
 
 task_context 'Task' do
     needs_configuration
@@ -51,8 +51,8 @@ task_context 'Task' do
     property('debug_viz', 'bool', false).
 	doc 'if set to true, the module will display the current environment for debugging.'
 
-    output_port('envire_data', '/envire/EnvireBinaryEvent').
-	doc 'events that contain envire data and can be used to visualize or log environment data over time.'
+    output_port('envire_data', 'std/vector</envire/BinaryEvent>').
+	doc 'a dump of currently most likely map'
 
     ##########################
     # filter parameters
@@ -106,7 +106,7 @@ task_context 'Task' do
 	argument( 'resolution', '/double', 0.05 ).
 	doc("Dumps the currently best map on the map output port, or to a file if the file parameter is set.")
 
-    output_port('map', '/envire/EnvireBinaryEvent').
+    output_port('map', 'std/vector</envire/BinaryEvent>').
 	doc 'a dump of currently most likely map'
 
     ##########################

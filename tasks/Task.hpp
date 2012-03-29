@@ -20,13 +20,13 @@ namespace envire
 {
     class BinaryEventDispatcher : public SynchronizationEventHandler
     {
-        RTT::OutputPort<EnvireBinaryEvent> &port;
+        RTT::OutputPort< std::vector<EnvireBinaryEvent> > &port;
 	Environment *env;
 	vizkit::MapVizEventFilter mapFilter;
 	base::Time time;
 
     public:
-	BinaryEventDispatcher( RTT::OutputPort<EnvireBinaryEvent> &port, Environment* env )
+	BinaryEventDispatcher( RTT::OutputPort< std::vector<EnvireBinaryEvent> > &port, Environment* env )
 	    : port( port ), env( env )
 	{
 	    // set the filter which allows only one of the many maps to go through
@@ -44,7 +44,11 @@ namespace envire
 
 	    // for now, lets write directly to the port and
 	    // don't do any event queueing
-	    port.write( *binary_event );
+            std::vector<BinaryEvent> event;
+            event.push_back(BinaryEvent());
+            event.back().move(*binary_event);
+	    port.write(event);
+            delete binary_event;
 	}
 
 	void viewMap( envire::MLSMap* map )

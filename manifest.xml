@@ -11,6 +11,7 @@
 
   <depend package="asguard/orogen/terrain_estimator" />
   <depend package="drivers/orogen/transformer" />
+  <depend package="slam/orogen/envire" />
   <depend package="base/types"/>
   <depend package="asguard/eslam"/>
   <depend package="slam/envire"/>
