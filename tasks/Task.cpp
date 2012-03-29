@@ -14,7 +14,7 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
-void Task::cloneMap( const std::string& file, double res )
+void Task::cloneMap( const std::string& file, std::string const& id, double res )
 {
     // this function will first find the particle with
     // the heighest weight, then merge all the individual grids
@@ -41,6 +41,7 @@ void Task::cloneMap( const std::string& file, double res )
     envire::MLSGrid::Ptr target = 
 	new envire::MLSGrid( extents.sizes().x() / res, extents.sizes().y() / res, 
 		res, res, extents.min().x(), extents.min().y() );
+    target->setUniqueId(id);
 
     // attach map 
     envire::Environment *env = map->getEnvironment();

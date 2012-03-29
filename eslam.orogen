@@ -102,9 +102,10 @@ task_context 'Task' do
 	doc 'timestamped particle distribution of the pose.'
 
     operation('cloneMap').
-	argument( 'file', '/std/string', '' ).
+	argument( 'file', '/std/string', 'the directory path in which the environment should be serialized' ).
+	argument( 'id', '/std/string', 'the ID of the generated map' ).
 	argument( 'resolution', '/double', 0.05 ).
-	doc("Dumps the currently best map on the map output port, or to a file if the file parameter is set.")
+	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set.")
 
     output_port('map', 'std/vector</envire/BinaryEvent>').
 	doc 'a dump of currently most likely map'
