@@ -14,7 +14,7 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
-void Task::cloneMap( const std::string& file, std::string const& id, double res )
+void Task::cloneMap()
 {
     // this function will first find the particle with
     // the heighest weight, then merge all the individual grids
@@ -35,13 +35,16 @@ void Task::cloneMap( const std::string& file, std::string const& id, double res 
     envire::MLSGrid* firstGrid = dynamic_cast<envire::MLSGrid*>( grids.front() );
     assert( firstGrid );
     double source_res = std::min( firstGrid->getScaleX(), firstGrid->getScaleY() );
+    double res = _map_resolution.value();
+    if( !(res > .0) )
+	res = source_res;
 
     // get bounds of the map, and create a new grid based on this 
     Eigen::AlignedBox<double,2> extents = map->getExtents();
     envire::MLSGrid::Ptr target = 
 	new envire::MLSGrid( extents.sizes().x() / res, extents.sizes().y() / res, 
 		res, res, extents.min().x(), extents.min().y() );
-    target->setUniqueId(id);
+    target->setUniqueId(_map_id.value());
 
     // attach map 
     envire::Environment *env = map->getEnvironment();
@@ -63,8 +66,8 @@ void Task::cloneMap( const std::string& file, std::string const& id, double res 
     envire::Environment target_env;
     target_env.setFrameNode( target.get(), target_env.getRootNode() );
 
-    if( !file.empty() )
-	target_env.serialize( file );
+    if( !_map_file.value().empty() )
+	target_env.serialize( _map_file.value() );
 
     if (_map.connected())
     {

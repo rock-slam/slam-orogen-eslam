@@ -101,12 +101,17 @@ task_context 'Task' do
     output_port('pose_distribution', '/eslam/PoseDistribution').
 	doc 'timestamped particle distribution of the pose.'
 
-    operation('cloneMap').
-	argument( 'file', '/std/string', 'the directory path in which the environment should be serialized' ).
-	argument( 'id', '/std/string', 'the ID of the generated map' ).
-	argument( 'resolution', '/double', 0.05 ).
-	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set.")
+    property('map_resolution', '/double', 0.1 ).
+	doc 'provide the resolution of the map which is generated when cloneMap is triggered, or 0 for using the internal resolution.'
 
+    property('map_file', '/std/string').
+	doc 'if set, cloneMap will write the environment to this location.'
+
+    property('map_id', '/std/string').
+	doc 'the ID of the generated map.'
+
+    operation('cloneMap').
+	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set.")
     output_port('map', 'std/vector</envire/BinaryEvent>').
 	doc 'a dump of currently most likely map'
 

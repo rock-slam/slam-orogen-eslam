@@ -36,13 +36,18 @@ Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
     Nameservice::Local.registered_tasks["odometry"] = log.contact_odometry
     Nameservice::Local.registered_tasks["dynamixel"] = log.dynamixel
 
-    Orocos.conf.apply( eslam )
+    Orocos.conf.apply( eslam, ['default', 'localisation'], true )
     Bundles.transformer.setup( eslam )
+
+    eslam.start_pose do |p|
+	p.position = Eigen::Vector3.new( -9.8, 55, 1.5 )
+	p.orientation = Eigen::Quaternion.from_angle_axis( Math::PI, Eigen::Vector3.UnitZ )
+    end
 
     log.hokuyo.scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 1000 ) 
     log.contact_odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 10000 )
     log.asguard_body.contact_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 1000 )
-    #log.camera_right.frame.connect_to( eslam.terrain_classification_frames, :type => :buffer, :size => 1000 )
+    #log.camera_left.frame.connect_to( eslam.terrain_classification_frames, :type => :buffer, :size => 1000 )
 
     #log.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
     log.contact_odometry.odometry_samples.connect_to( eslam.reference_pose, :type => :buffer, :size => 1000 )
@@ -52,6 +57,10 @@ Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
     eslam.debug_viz = true if opts[:debug]
 
     eslam.transformer_max_latency = 2.0
+
+    if opts[:env_dir]
+	eslam.environment_path = opts[:env_dir]
+    end
 
     eslam.configure
     eslam.start
