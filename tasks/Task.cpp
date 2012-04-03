@@ -47,8 +47,10 @@ void Task::cloneMap()
 
     // get bounds of the map, and create a new grid based on this 
     Eigen::AlignedBox<double,2> extents = map->getExtents();
+    size_t width = extents.sizes().x() / res;
+    size_t height = extents.sizes().y() / res;
     envire::MLSGrid::Ptr target = 
-	new envire::MLSGrid( extents.sizes().x() / res, extents.sizes().y() / res, 
+	new envire::MLSGrid( std::max(1ul, width), std::max(1ul, height), 
 		res, res, extents.min().x(), extents.min().y() );
     target->setUniqueId(_map_id.value());
 
