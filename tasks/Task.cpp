@@ -14,6 +14,12 @@ Task::Task(std::string const& name)
     _start_pose.value().invalidate();
 }
 
+Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
+    : TaskBase(name, engine), envireEventDispatcher(NULL)
+{
+    _start_pose.value().invalidate();
+}
+
 void Task::cloneMap()
 {
     // this function will first find the particle with
