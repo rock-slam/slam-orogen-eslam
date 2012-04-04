@@ -11,10 +11,8 @@
 
 #include <aggregator/PullStreamAligner.hpp>
 
-#ifdef DEBUG_VIZ
 #include <vizkit/EslamWidget.hpp>
 #include <vizkit/QtThreadedWidget.hpp>
-#endif
 
 namespace envire
 {
@@ -82,9 +80,8 @@ namespace eslam {
 
 	envire::BinaryEventDispatcher* envireEventDispatcher;
 
-#ifdef DEBUG_VIZ
 	QtThreadedWidget<vizkit::EslamWidget> viz;
-#endif
+
         virtual void cloneMap();
 	// transformer callbacks
         virtual void bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample);

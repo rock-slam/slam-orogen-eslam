@@ -178,9 +178,7 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
 
 void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState& bs, base::Affine3d& centroid, bool updated )
 {
-#ifndef DEBUG_VIZ
     if( _pose_distribution.connected() )
-#endif
     {
 	eslam::PoseDistribution pd;
 	pd.time = ts;
@@ -229,7 +227,6 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 	if( _pose_distribution.connected() )
 	    _pose_distribution.write( pd );
 
-#ifdef DEBUG_VIZ
 	if( _debug_viz.value() )
 	{
 	    viz.getWidget()->setPoseDistribution( pd );
@@ -263,7 +260,6 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 		   */
 	    }
 	}
-#endif
     }
 }
 
@@ -295,18 +291,14 @@ bool Task::configureHook()
 	useScans = true;
     }
 
-#ifdef DEBUG_VIZ
     if( _debug_viz.value() )
     {
 	viz.start();
 	viz.getWidget()->setEnvironment( env.get() );
     }
-#endif
 
-#ifndef DEBUG_VIZ
     if( _debug_viz.value() )
 	throw std::runtime_error( "DEBUG_VIZ not compiled in." );
-#endif
 
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );

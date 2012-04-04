@@ -15,5 +15,5 @@
   <depend package="base/types"/>
   <depend package="asguard/eslam"/>
   <depend package="slam/envire"/>
-  <depend package="gui/vizkit" optional="1"/>
+  <depend package="gui/vizkit"/>
 </package>
