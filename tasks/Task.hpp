@@ -75,7 +75,7 @@ namespace eslam {
 	Eigen::Quaterniond update_orientation;
 	eslam::BodyContactState update_bodystate; 
 	// derived configuration variable 
-	bool useScans;
+	bool doMapping;
 	eslam::BodyContactState lastContactState; 
 
 	envire::BinaryEventDispatcher* envireEventDispatcher;

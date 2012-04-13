@@ -158,20 +158,23 @@ void Task::terrain_classification_wheelTransformerCallback(const base::Time &ts,
 
 void Task::distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample)
 {
-    Eigen::Affine3d body2odometry, lcamera2body;
-    if( !_body2odometry.get( ts, body2odometry ) || !_lcamera2body.get( ts, lcamera2body ) )
-	return;
+    if( doMapping )
+    {
+	Eigen::Affine3d body2odometry, lcamera2body;
+	if( !_body2odometry.get( ts, body2odometry ) || !_lcamera2body.get( ts, lcamera2body ) )
+	    return;
 
-    // update the filter with laser data
-    if( terrainClassificationFrame.time == distance_frames_sample.time )
-	filter->update( body2odometry, distance_frames_sample, lcamera2body, &terrainClassificationFrame );
-    else
-	filter->update( body2odometry, distance_frames_sample, lcamera2body );
+	// update the filter with laser data
+	if( terrainClassificationFrame.time == distance_frames_sample.time )
+	    filter->update( body2odometry, distance_frames_sample, lcamera2body, &terrainClassificationFrame );
+	else
+	    filter->update( body2odometry, distance_frames_sample, lcamera2body );
+    }
 }
 
 void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::samples::LaserScan &scan_samples_sample)
 {
-    if( useScans )
+    if( doMapping )
     {
 	Eigen::Affine3d body2odometry, laser2body;
 	if( !_body2odometry.get( ts, body2odometry ) || !_laser2body.get( ts, laser2body ) )
@@ -288,13 +291,13 @@ bool Task::configureHook()
     {
 	std::cout << "loading environment: " << _environment_path.value() << std::endl;
 	env = boost::shared_ptr<envire::Environment>( envire::Environment::unserialize( _environment_path.value() ) );
-	useScans = false;
+	doMapping = false;
 	useShared = true;
     }
     else
     {
 	env = boost::shared_ptr<envire::Environment>( new envire::Environment() );
-	useScans = true;
+	doMapping = true;
     }
 
     if( _debug_viz.value() )
