@@ -20,7 +20,7 @@ Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
     _start_pose.value().invalidate();
 }
 
-void Task::cloneMap()
+base::samples::RigidBodyState Task::cloneMap()
 {
     // this function will first find the particle with
     // the heighest weight, then merge all the individual grids
@@ -30,8 +30,12 @@ void Task::cloneMap()
     assert( !filter->getParticles().empty() );
 
     // first get the map pointer to the best particle
+    size_t best_idx = filter->getBestParticleIndex();
     envire::MLSMap::Ptr map = 
-	filter->getParticles()[filter->getBestParticleIndex()].grid.getMap();
+	filter->getParticles()[best_idx].grid.getMap();
+    base::samples::RigidBodyState pose;
+    pose.setTransform(
+	filter->getParticles()[best_idx].getPose( update_orientation ) );
 
     // see if the map actually has any children (grids)
     std::list<envire::Layer*> grids = env->getChildren( map.get() );
@@ -82,6 +86,8 @@ void Task::cloneMap()
         envire::OrocosEmitter emitter(&target_env, _map);
         emitter.flush();
     }
+
+    return pose;
 }
 
 void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample)

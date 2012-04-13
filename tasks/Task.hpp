@@ -82,7 +82,7 @@ namespace eslam {
 
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 
-        virtual void cloneMap();
+        virtual ::base::samples::RigidBodyState cloneMap();
 	// transformer callbacks
         virtual void bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample);
         virtual void distance_framesTransformerCallback(const base::Time &ts, const ::base::samples::DistanceImage &distance_frames_sample);

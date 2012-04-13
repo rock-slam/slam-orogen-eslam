@@ -111,7 +111,9 @@ task_context 'Task' do
 	doc 'the ID of the generated map.'
 
     operation('cloneMap').
-	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set.")
+	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set. Returns the pose of the current best particle.").
+	returns("/base/samples/RigidBodyState")
+
     output_port('map', 'std/vector</envire/BinaryEvent>').
 	doc 'a dump of currently most likely map'
 
