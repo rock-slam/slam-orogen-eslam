@@ -9,10 +9,8 @@ using_library 'asguard'
 import_types_from 'base'
 import_types_from 'terrain_estimator'
 import_types_from 'envire'
-import_types_from "asguard/BodyState.hpp"
-import_types_from "asguard/Configuration.hpp"
+import_types_from 'asguard'
 import_types_from "eslam/Configuration.hpp"
-import_types_from "eslam/ContactState.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 
 import_types_from "aggregator"

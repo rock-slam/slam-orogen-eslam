@@ -14,6 +14,7 @@
   <depend package="slam/orogen/envire" />
   <depend package="base/types"/>
   <depend package="asguard/eslam"/>
+  <depend package="asguard/orogen/asguard"/>
   <depend package="slam/envire"/>
   <depend package="gui/vizkit"/>
 </package>
