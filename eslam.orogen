@@ -52,6 +52,9 @@ task_context 'Task' do
     output_port('envire_data', 'std/vector</envire/BinaryEvent>').
 	doc 'a dump of currently most likely map'
 
+    property('envire_period', 'double', 1.0).
+	doc 'update period in s for the envire_data port.'
+
     ##########################
     # filter parameters
     ##########################

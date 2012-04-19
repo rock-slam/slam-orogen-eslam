@@ -9,13 +9,13 @@
 using namespace eslam;
 
 Task::Task(std::string const& name)
-    : TaskBase(name), envireEventDispatcher(NULL)
+    : TaskBase(name), orocosEmitter(NULL), mapFilter(NULL)
 {
     _start_pose.value().invalidate();
 }
 
 Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
-    : TaskBase(name, engine), envireEventDispatcher(NULL)
+    : TaskBase(name, engine), orocosEmitter(NULL), mapFilter(NULL)
 {
     _start_pose.value().invalidate();
 }
@@ -97,7 +97,8 @@ void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::
 	return;
 
     // set timestamp for envire eventdispatcher
-    envireEventDispatcher->setTime( ts );
+    if( orocosEmitter )
+	orocosEmitter->setTime( ts );
 
     // call the filter with the bodystate
     bool updated = filter->update( body2odometry, lastContactState, terrainClassificationWheel ); 
@@ -248,26 +249,28 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 
 	    if( updated )
 	    {
-		typedef eslam::PoseEstimator::Particle Particle;
-		std::vector<eslam::PoseEstimator::Particle>::iterator el =
-		    std::max_element( particles.begin(), particles.end(), 
-			    boost::bind( &Particle::weight, _1 ) < boost::bind( &Particle::weight, _2 )  );
-		envire::MLSMap* map;
-		//const size_t best_particle_idx = el - particles.begin(); 
+		size_t view_idx = filter->getBestParticleIndex();
 		if( inspect_particle_idx >= 0 )
-		    map = particles[inspect_particle_idx].grid.getMap();
-		else
-		    map = el->grid.getMap();
+		    view_idx = inspect_particle_idx;
+
+		envire::MLSMap *map = 
+		    particles[view_idx].grid.getMap();
 
 		viz.getWidget()->viewMap( map );
-		if( envireEventDispatcher )
-		    envireEventDispatcher->viewMap( map );
-
 		/*
 		   envire::GraphViz viz;
 		   viz.writeToFile( env.get(), "/tmp/env.dot" );
 		   */
 	    }
+	}
+
+	if( _envire_data.connected() && mapFilter )
+	{
+	    size_t view_idx = filter->getBestParticleIndex();
+	    envire::MLSMap *map = 
+		particles[view_idx].grid.getMap();
+
+	    mapFilter->viewMap( map );
 	}
     }
 }
@@ -321,22 +324,42 @@ bool Task::startHook()
     if( !TaskBase::startHook() )
 	return false;
 
-    //if( _envire_data.connected() )
-    {
-	assert( env );
-	std::cout << "attaching EventDispatcher" << std::endl;
-
-	// register the binary event dispatcher, 
-	// which will write envire data to a port
-	envireEventDispatcher = new envire::BinaryEventDispatcher( _envire_data, env.get() );
-    }
-
     return true;
 }
 
 void Task::updateHook()
 {
+    if( !orocosEmitter && _envire_data.connected() )
+    {
+	// register the binary event dispatcher, 
+	// which will write envire data to a port
+	orocosEmitter = new envire::OrocosEmitter( _envire_data );
+	mapFilter = new vizkit::MapVizEventFilter();
+	orocosEmitter->setFilter( mapFilter );
+	orocosEmitter->useContextUpdates( env.get() );
+	orocosEmitter->useEventQueue( true );
+	orocosEmitter->attach( env.get() );
+    }
     TaskBase::updateHook();
+
+    if( orocosEmitter )
+    {
+	if( _envire_data.connected() )
+	{
+	    if( (lastEnvireDataUpdate + base::Time::fromSeconds(_envire_period.value())) < base::Time::now() ) 
+	    {
+		orocosEmitter->flush();
+		lastEnvireDataUpdate = base::Time::now();
+	    }
+	}
+	else
+	{
+	    delete orocosEmitter;
+	    delete mapFilter;
+	    orocosEmitter = NULL;
+	    mapFilter = NULL;
+	}
+    }
 }
 
 // void Task::errorHook()
@@ -345,7 +368,10 @@ void Task::updateHook()
 
 void Task::stopHook()
 {
-    delete envireEventDispatcher;
+    delete orocosEmitter;
+    delete mapFilter;
+    orocosEmitter = NULL;
+    mapFilter = NULL;
 
     // write environment, if path is given
     if( !_environment_debug_path.value().empty() )

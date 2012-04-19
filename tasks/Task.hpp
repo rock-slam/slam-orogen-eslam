@@ -13,53 +13,7 @@
 
 #include <vizkit/EslamWidget.hpp>
 #include <vizkit/QtThreadedWidget.hpp>
-
-namespace envire
-{
-    class BinaryEventDispatcher : public SynchronizationEventHandler
-    {
-        RTT::OutputPort< std::vector<EnvireBinaryEvent> > &port;
-	Environment *env;
-	vizkit::MapVizEventFilter mapFilter;
-	base::Time time;
-
-    public:
-	BinaryEventDispatcher( RTT::OutputPort< std::vector<EnvireBinaryEvent> > &port, Environment* env )
-	    : port( port ), env( env )
-	{
-	    // set the filter which allows only one of the many maps to go through
-	    // this is very eslam specific
-	    setFilter( &mapFilter );
-
-	    // register this class as event handler for environment
-	    env->addEventHandler( this );
-	}
-
-	void handle( EnvireBinaryEvent* binary_event )
-	{
-	    // set the current timestamp
-	    binary_event->time = time;
-
-	    // for now, lets write directly to the port and
-	    // don't do any event queueing
-            std::vector<BinaryEvent> event;
-            event.push_back(BinaryEvent());
-            event.back().move(*binary_event);
-	    port.write(event);
-            delete binary_event;
-	}
-
-	void viewMap( envire::MLSMap* map )
-	{
-	    mapFilter.viewMap( map );
-	}
-
-	void setTime( base::Time time )
-	{
-	    this->time = time;
-	}
-    };
-}
+#include <envire/Orocos.hpp>
 
 namespace eslam {
 
@@ -78,7 +32,9 @@ namespace eslam {
 	bool doMapping;
 	eslam::BodyContactState lastContactState; 
 
-	envire::BinaryEventDispatcher* envireEventDispatcher;
+	envire::OrocosEmitter* orocosEmitter;
+	vizkit::MapVizEventFilter* mapFilter;
+	base::Time lastEnvireDataUpdate;
 
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 
