@@ -25,24 +25,17 @@ if ARGV.empty?
 end
 opts[:log_dir] = ARGV[0]
 
+Orocos::CORBA::max_message_size = 100000000
 Bundles.initialize
 Nameservice::enable(:Local)
 
 # This will kill processes when we quit the block
 Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
-    eslam = p.task('eslam')
+    eslam = Bundles.get('eslam')
 
     log = Orocos::Log::Replay.open( opts[:log_dir] )
     Nameservice::Local.registered_tasks["odometry"] = log.contact_odometry
     Nameservice::Local.registered_tasks["dynamixel"] = log.dynamixel
-
-    Orocos.conf.apply( eslam, ['default', 'localisation'], true )
-    Bundles.transformer.setup( eslam )
-
-    eslam.start_pose do |p|
-	p.position = Eigen::Vector3.new( -9.8, 55, 1.5 )
-	p.orientation = Eigen::Quaternion.from_angle_axis( Math::PI, Eigen::Vector3.UnitZ )
-    end
 
     log.hokuyo.scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 1000 ) 
     log.contact_odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 10000 )
@@ -54,7 +47,16 @@ Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
     #log.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
     #log.stereo.distance_frame.connect_to( eslam.distance_frames, :type => :buffer, :size => 2 )
 
-    eslam.debug_viz = true if opts[:debug]
+    Orocos.conf.apply( eslam, ['default'], true )
+    #Orocos.conf.apply( eslam, ['default', 'localisation'], true )
+    Bundles.transformer.setup( eslam )
+
+    eslam.start_pose do |p|
+	#p.position = Eigen::Vector3.new( -9.8, 55, 1.5 )
+	#p.orientation = Eigen::Quaternion.from_angle_axis( Math::PI, Eigen::Vector3.UnitZ )
+    end
+
+    eslam.debug_viz = opts[:debug] ? true : false
 
     eslam.transformer_max_latency = 2.0
 
