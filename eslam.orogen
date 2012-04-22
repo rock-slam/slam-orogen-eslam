@@ -49,7 +49,7 @@ task_context 'Task' do
     property('debug_viz', 'bool', false).
 	doc 'if set to true, the module will display the current environment for debugging.'
 
-    output_port('envire_data', 'std/vector</envire/BinaryEvent>').
+    output_port('envire_data', ro_ptr('std/vector</envire/BinaryEvent>')).
 	doc 'a dump of currently most likely map'
 
     property('envire_period', 'double', 1.0).
@@ -115,7 +115,7 @@ task_context 'Task' do
 	doc("Dumps the currently best map on the map output port if it is connected and/or to a directory if the file parameter is set. Returns the pose of the current best particle.").
 	returns("/base/samples/RigidBodyState")
 
-    output_port('map', 'std/vector</envire/BinaryEvent>').
+    output_port('map', ro_ptr('std/vector</envire/BinaryEvent>')).
 	doc 'a dump of currently most likely map'
 
     ##########################
