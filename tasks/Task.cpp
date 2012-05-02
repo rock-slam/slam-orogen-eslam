@@ -245,18 +245,15 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 	    base::samples::RigidBodyState ref_pose;
 	    while( _reference_pose.read( ref_pose ) == RTT::NewData )
 		viz.getWidget()->setReferencePose( ref_pose.getPose() );
-	    const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
 
+	    const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
 	    if( updated )
 	    {
 		size_t view_idx = filter->getBestParticleIndex();
 		if( inspect_particle_idx >= 0 )
 		    view_idx = inspect_particle_idx;
 
-		envire::MLSMap *map = 
-		    particles[view_idx].grid.getMap();
-
-		viz.getWidget()->viewMap( map );
+		viz.getWidget()->viewMap( view_idx );
 		/*
 		   envire::GraphViz viz;
 		   viz.writeToFile( env.get(), "/tmp/env.dot" );
@@ -307,6 +304,7 @@ bool Task::configureHook()
     {
 	viz.start();
 	viz.getWidget()->setEnvironment( env.get() );
+	viz.getWidget()->setPoseParticles( &filter->getParticles() );
     }
 
     // init the filter
