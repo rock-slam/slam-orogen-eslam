@@ -3,8 +3,9 @@
 
 #include <envire/operators/MergeMLS.hpp>
 #include <envire/tools/GraphViz.hpp>
-#include <eslam/ExpectationMaximization.hpp>
 #include <envire/Orocos.hpp>
+#include <envire/tools/ExpectationMaximization.hpp>
+#include <envire/tools/GaussianMixture.hpp>
 
 using namespace eslam;
 
@@ -204,7 +205,7 @@ void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState
 	{
 	    std::vector<base::Vector2d> em_pars;
 	    std::vector<double> em_weights;
-	    eslam::ExpectationMaximization<PoseDistribution::GMM> em;
+	    envire::ExpectationMaximization<PoseDistribution::GMM> em;
 	    for( size_t i=0; i<pd.particles.size(); i++ )
 	    {
 		em_pars.push_back( particles[i].position );
