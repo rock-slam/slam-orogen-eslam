@@ -136,7 +136,7 @@ void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::
 
 }
 
-void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::eslam::BodyContactState &bodystate_samples_sample)
+void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::odometry::BodyContactState &bodystate_samples_sample)
 {
     lastContactState = bodystate_samples_sample;
 }
@@ -187,7 +187,7 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
     }
 }
 
-void Task::updateFilterInfo( const base::Time& ts, const eslam::BodyContactState& bs, base::Affine3d& centroid, bool updated )
+void Task::updateFilterInfo( const base::Time& ts, const odometry::BodyContactState& bs, base::Affine3d& centroid, bool updated )
 {
     if( _debug_viz.value() || _pose_distribution.connected() )
     {

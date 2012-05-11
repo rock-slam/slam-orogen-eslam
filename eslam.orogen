@@ -12,6 +12,8 @@ import_types_from 'envire'
 import_types_from 'asguard'
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
+import_types_from "odometry/Configuration.hpp"
+import_types_from "odometry/ContactState.hpp"
 
 import_types_from "aggregator"
 
@@ -24,7 +26,7 @@ task_context 'Task' do
     property('eslam_config', '/eslam/Configuration').
 	doc 'Configuration options for the eslam filter.'
 
-    property('odometry_config', '/asguard/odometry/Configuration').
+    property('odometry_config', '/odometry/Configuration').
 	doc 'Configuration options for the asguard odometry.'
 
     property('asguard_config', '/asguard/Configuration').
@@ -82,7 +84,7 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'timestamped laser scans'
 
-    input_port('bodystate_samples', '/eslam/BodyContactState').
+    input_port('bodystate_samples', '/odometry/BodyContactState').
 	needs_reliable_connection.
 	doc 'timestamped samples providing the configuration state of the robot.'
 
