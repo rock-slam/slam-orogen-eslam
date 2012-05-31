@@ -18,4 +18,5 @@
   <depend package="slam/envire"/>
   <depend package="slam/orogen/envire"/>
   <depend package="gui/vizkit"/>
+  <tags>needs_opt</tags>
 </package>
