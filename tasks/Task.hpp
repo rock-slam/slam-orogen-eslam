@@ -32,6 +32,9 @@ namespace eslam {
 	bool doMapping;
 	odometry::BodyContactState lastContactState; 
 
+	// count the number of pose outputs
+	size_t outputCounter;
+
 	envire::OrocosEmitter* orocosEmitter;
 	vizkit::MapVizEventFilter* mapFilter;
 	base::Time lastEnvireDataUpdate;

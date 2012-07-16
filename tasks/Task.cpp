@@ -133,7 +133,7 @@ void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::
     res_rbs.targetFrame = "world";
 
     _pose_samples.write( res_rbs );
-
+    outputCounter++;
 }
 
 void Task::bodystate_samplesTransformerCallback(const base::Time &ts, const ::odometry::BodyContactState &bodystate_samples_sample)
@@ -236,7 +236,11 @@ void Task::updateFilterInfo( const base::Time& ts, const odometry::BodyContactSt
 	}
 
 	if( _pose_distribution.connected() )
-	    _pose_distribution.write( pd );
+	{
+	    const unsigned int period = _eslam_config.value().logParticlePeriod;
+	    if( period > 0 && (outputCounter % period) == 0 )
+		_pose_distribution.write( pd );
+	}
 
 	if( _debug_viz.value() )
 	{
@@ -314,6 +318,9 @@ bool Task::configureHook()
     filter->init( env.get(), pose, useShared, _hash_config.value() );
 
     std::cerr << "initialized" << std::endl;
+
+    // reset output counter
+    outputCounter = 0;
 
     return TaskBase::configureHook();
 }
