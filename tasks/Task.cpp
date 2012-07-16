@@ -310,6 +310,9 @@ bool Task::configureHook()
 	viz.start();
 	viz.getWidget()->setEnvironment( env.get() );
 	viz.getWidget()->setPoseParticles( &filter->getParticles() );
+
+	Eigen::Vector3d start_pose = _start_pose.value().position;
+	viz.getWidget()->setCameraEye( start_pose.x(), start_pose.y(), start_pose.z() );
     }
 
     // init the filter
