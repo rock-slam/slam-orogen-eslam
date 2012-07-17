@@ -32,6 +32,9 @@ namespace eslam {
 	bool doMapping;
 	odometry::BodyContactState lastContactState; 
 
+	//flag for telling whether the environment is shared
+	bool useShared;
+	
 	// count the number of pose outputs
 	size_t outputCounter;
 

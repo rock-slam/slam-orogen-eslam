@@ -291,7 +291,7 @@ bool Task::configureHook()
 		_eslam_config.get() ) ); 
 
     // load an environment if path is specified
-    bool useShared = false;
+    useShared = false;
     if( !_environment_path.value().empty() )
     {
 	std::cout << "loading environment: " << _environment_path.value() << std::endl;
@@ -305,6 +305,14 @@ bool Task::configureHook()
 	doMapping = true;
     }
 
+    return TaskBase::configureHook();
+}
+
+bool Task::startHook()
+{
+    if( !TaskBase::startHook() )
+	return false;
+
     if( _debug_viz.value() )
     {
 	viz.start();
@@ -314,7 +322,7 @@ bool Task::configureHook()
 	Eigen::Vector3d start_pose = _start_pose.value().position;
 	viz.getWidget()->setCameraEye( start_pose.x(), start_pose.y(), start_pose.z() );
     }
-
+    
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
     std::cerr << "starting at position " << pose.position.transpose() << std::endl;
@@ -324,15 +332,7 @@ bool Task::configureHook()
 
     // reset output counter
     outputCounter = 0;
-
-    return TaskBase::configureHook();
-}
-
-bool Task::startHook()
-{
-    if( !TaskBase::startHook() )
-	return false;
-
+    
     return true;
 }
 
