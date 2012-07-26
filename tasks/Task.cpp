@@ -296,7 +296,7 @@ bool Task::configureHook()
     {
 	std::cout << "loading environment: " << _environment_path.value() << std::endl;
 	env = boost::shared_ptr<envire::Environment>( envire::Environment::unserialize( _environment_path.value() ) );
-	doMapping = false;
+	doMapping = _eslam_config.get().useVisualUpdate;
 	useShared = true;
     }
     else
