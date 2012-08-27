@@ -12,8 +12,7 @@ import_types_from 'envire'
 import_types_from 'asguard'
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
-import_types_from "odometry/Configuration.hpp"
-import_types_from "odometry/ContactState.hpp"
+import_types_from "odometry"
 
 import_types_from "aggregator"
 
