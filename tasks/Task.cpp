@@ -293,7 +293,6 @@ bool Task::configureHook()
 {
     // initialize the filter object with the current configuration
     filter = boost::shared_ptr<eslam::EmbodiedSlamFilter>( new eslam::EmbodiedSlamFilter( 
-		_asguard_config.get(),
 		_odometry_config.get(), 
 		_eslam_config.get() ) ); 
 

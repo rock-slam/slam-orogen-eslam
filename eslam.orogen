@@ -4,12 +4,10 @@ version 0.1
 using_library 'eslam'
 using_library 'eslam-viz'
 using_library 'envire'
-using_library 'asguard'
 
 import_types_from 'base'
 import_types_from 'terrain_estimator'
 import_types_from 'envire'
-import_types_from 'asguard'
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 import_types_from "odometry"
@@ -26,10 +24,7 @@ task_context 'Task' do
 	doc 'Configuration options for the eslam filter.'
 
     property('odometry_config', '/odometry/Configuration').
-	doc 'Configuration options for the asguard odometry.'
-
-    property('asguard_config', '/asguard/Configuration').
-	doc 'Configuration options for the asguard robot.'
+	doc 'Configuration options for the odometry.'
 
     property('calc_gmm', 'bool', false).
 	doc 'Optionally calculated the Guassian Mixture Model of the particle Distribution.'

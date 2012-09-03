@@ -5,7 +5,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <eslam/EmbodiedSlamFilter.hpp>
-#include <asguard/Odometry.hpp>
 #include <envire/Core.hpp>
 #include <vizkit/MapVizEventFilter.hpp>
 
