@@ -41,6 +41,7 @@ namespace eslam {
 	envire::OrocosEmitter* orocosEmitter;
 	vizkit::MapVizEventFilter* mapFilter;
 	base::Time lastEnvireDataUpdate;
+	base::Time lastMapUpdate;
 
 	QtThreadedWidget<vizkit::EslamWidget> viz;
 

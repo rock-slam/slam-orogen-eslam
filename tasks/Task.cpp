@@ -78,6 +78,11 @@ base::samples::RigidBodyState Task::cloneMap()
     // mls to new environment
     envire::Environment target_env;
     target_env.setFrameNode( target.get(), target_env.getRootNode() );
+    
+    // add pose as framenode
+    envire::FrameNode *bfn = new envire::FrameNode( pose );
+    bfn->setUniqueId("/frame/body");
+    target_env.addChild( target_env.getRootNode(), bfn );
 
     if( !_map_file.value().empty() )
 	target_env.serialize( _map_file.value() );
@@ -85,6 +90,7 @@ base::samples::RigidBodyState Task::cloneMap()
     if (_map.connected())
     {
         envire::OrocosEmitter emitter(&target_env, _map);
+	emitter.setTime( lastMapUpdate );
         emitter.flush();
     }
 
@@ -98,8 +104,9 @@ void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::
 	return;
 
     // set timestamp for envire eventdispatcher
+    lastMapUpdate = ts;
     if( orocosEmitter )
-	orocosEmitter->setTime( ts );
+	orocosEmitter->setTime( lastMapUpdate );
 
     // call the filter with the bodystate
     bool updated = filter->update( body2odometry, lastContactState, terrainClassificationWheel ); 
