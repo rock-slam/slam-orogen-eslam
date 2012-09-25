@@ -42,7 +42,8 @@ Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
     log.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 10000 )
     log.asguard_body.contact_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 1000 )
     #log.camera_left.frame.connect_to( eslam.terrain_classification_frames, :type => :buffer, :size => 1000 )
-
+    #log.stereo.stereo_features.connect_to( eslam.stereo_features, :type => :buffer, :size => 2 )
+    
     props = ['default']
     if opts[:env_dir] 
 	props << 'localization'

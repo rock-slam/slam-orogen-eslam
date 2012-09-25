@@ -11,6 +11,7 @@ import_types_from 'envire'
 import_types_from "eslam/Configuration.hpp"
 import_types_from "eslam/PoseParticle.hpp"
 import_types_from "odometry"
+import_types_from 'stereo'
 
 import_types_from "aggregator"
 
@@ -61,6 +62,10 @@ task_context 'Task' do
     ##########################
     # i/o ports 
     ##########################
+
+    input_port('stereo_features', '/stereo/StereoFeatureArray').
+	needs_reliable_connection.
+	doc 'sparse feature array'
 
     input_port('distance_frames', '/base/samples/DistanceImage').
 	needs_reliable_connection.
@@ -124,7 +129,8 @@ task_context 'Task' do
 	align_port("scan_samples", 0.02) 
 	align_port("terrain_classification_frames", 0.1)
 	align_port("terrain_classification_wheel", 0.0)
-	align_port("distance_frames", 0.1)
+	align_port("distance_frames", 0.5)
+	align_port("stereo_features", 0.5)
 	align_port("bodystate_samples", 0.01)
     end
 

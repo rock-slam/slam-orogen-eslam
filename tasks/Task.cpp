@@ -194,6 +194,28 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
     }
 }
 
+void Task::stereo_featuresTransformerCallback(const base::Time &ts, const ::stereo::StereoFeatureArray &stereo_features_sample)
+{
+    if( doMapping )
+    {
+	Eigen::Affine3d lcamera2body;
+	if( !_lcamera2body.get( ts, lcamera2body ) )
+	    return;
+
+	// transform the featurearray into an envire Featurecloud in the body
+	// frame of the robot
+	envire::Featurecloud::Ptr featurePc = new envire::Featurecloud();
+	featurePc->setLabel("sparse");
+	stereo_features_sample.copyTo( *featurePc.get(), 5.0, lcamera2body );
+
+	// and update the filter, which at the current state will perfom
+	// segmentation if needed
+	bool doSegment = filter->update( featurePc.get() );
+	if( doSegment )
+	    updateViewFilter();
+    }
+}
+
 void Task::updateViewFilter()
 {
     if( _debug_viz.value() )

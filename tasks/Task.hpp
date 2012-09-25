@@ -52,6 +52,7 @@ namespace eslam {
         virtual void terrain_classification_framesTransformerCallback(const base::Time &ts, const ::base::samples::frame::Frame &terrain_classification_frames_sample);
         virtual void terrain_classification_wheelTransformerCallback(const base::Time &ts, const ::terrain_estimator::TerrainClassification &terrain_classification_wheel_sample);
 	void body2OdometryTransformerCallback(const base::Time& ts);
+        virtual void stereo_featuresTransformerCallback(const base::Time &ts, const ::stereo::StereoFeatureArray &stereo_features_sample);
 
 	// store last terrain classifications 
 	std::vector<terrain_estimator::TerrainClassification> terrainClassificationWheel;
