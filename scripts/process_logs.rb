@@ -33,25 +33,33 @@ Nameservice::enable(:Local)
 Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
     eslam = Bundles.get('eslam')
 
-    log = Orocos::Log::Replay.open( opts[:log_dir] )
-    Nameservice::Local.registered_tasks["odometry"] = log.contact_odometry
+    files = Dir.glob( File.join( opts[:log_dir], "{gps,hokuyo,lowlevel,dynamixel,eslam_mapping,eslam_pose_estimator}.*.log" ) )
+    log = Orocos::Log::Replay.open( files )
+    Nameservice::Local.registered_tasks["odometry"] = log.odometry
     Nameservice::Local.registered_tasks["dynamixel"] = log.dynamixel
 
-    log.hokuyo.scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 1000 ) 
-    log.contact_odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 10000 )
+    log.filter.filtered_scans.connect_to( eslam.scan_samples, :type => :buffer, :size => 1000 ) 
+    log.odometry.odometry_samples.connect_to( eslam.orientation_samples, :type => :buffer, :size => 10000 )
     log.asguard_body.contact_samples.connect_to( eslam.bodystate_samples, :type => :buffer, :size => 1000 )
     #log.camera_left.frame.connect_to( eslam.terrain_classification_frames, :type => :buffer, :size => 1000 )
 
-    #log.mb500.position_samples.connect_to( @eslam.reference_pose, :type => :buffer, :size => 10 )
-    log.contact_odometry.odometry_samples.connect_to( eslam.reference_pose, :type => :buffer, :size => 1000 )
-    #log.dynamixel.lowerDynamixel2UpperDynamixel.connect_to( @eslam.dynamic_transformations, :type => :buffer, :size => 1000 )
-    #log.stereo.distance_frame.connect_to( eslam.distance_frames, :type => :buffer, :size => 2 )
-
-    Orocos.conf.apply( eslam, ['default'], true )
-    #Orocos.conf.apply( eslam, ['default', 'localisation'], true )
+    props = ['default']
+    if opts[:env_dir] 
+	props << 'localization'
+    end
+    Orocos.conf.apply( eslam, props, true )
     Bundles.transformer.setup( eslam )
 
+    # handle start position
+    start_pos = nil
+    log.mb500.position_samples.connect_to( eslam.reference_pose, :type => :buffer, :size => 10 ) do |data,_|
+	start_pos ||= data.position
+	data.position = data.position - start_pos
+	data
+    end
+
     eslam.start_pose do |p|
+	p.position = start_pos
 	#p.position = Eigen::Vector3.new( -9.8, 55, 1.5 )
 	#p.orientation = Eigen::Quaternion.from_angle_axis( Math::PI, Eigen::Vector3.UnitZ )
     end
