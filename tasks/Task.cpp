@@ -194,6 +194,29 @@ void Task::scan_samplesTransformerCallback(const base::Time &ts, const ::base::s
     }
 }
 
+void Task::updateViewFilter()
+{
+    if( _debug_viz.value() )
+    {
+	const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
+	size_t view_idx = filter->getBestParticleIndex();
+	if( inspect_particle_idx >= 0 )
+	    view_idx = inspect_particle_idx;
+
+	viz.getWidget()->viewMap( view_idx );
+    }
+
+    if( _envire_data.connected() && mapFilter )
+    {
+	std::vector<eslam::PoseEstimator::Particle>& particles( filter->getParticles() );
+	size_t view_idx = filter->getBestParticleIndex();
+	envire::MLSMap *map = 
+	    particles[view_idx].grid.getMap();
+
+	mapFilter->viewMap( map );
+    }
+}
+
 void Task::updateFilterInfo( const base::Time& ts, const odometry::BodyContactState& bs, base::Affine3d& centroid, bool updated )
 {
     if( _debug_viz.value() || _pose_distribution.connected() )
@@ -257,31 +280,11 @@ void Task::updateFilterInfo( const base::Time& ts, const odometry::BodyContactSt
 	    base::samples::RigidBodyState ref_pose;
 	    while( _reference_pose.read( ref_pose ) == RTT::NewData )
 		viz.getWidget()->setReferencePose( ref_pose.getPose() );
-
-	    const int inspect_particle_idx = viz.getWidget()->getInspectedParticleIndex();
-	    if( updated )
-	    {
-		size_t view_idx = filter->getBestParticleIndex();
-		if( inspect_particle_idx >= 0 )
-		    view_idx = inspect_particle_idx;
-
-		viz.getWidget()->viewMap( view_idx );
-		/*
-		   envire::GraphViz viz;
-		   viz.writeToFile( env.get(), "/tmp/env.dot" );
-		   */
-	    }
-	}
-
-	if( _envire_data.connected() && mapFilter )
-	{
-	    size_t view_idx = filter->getBestParticleIndex();
-	    envire::MLSMap *map = 
-		particles[view_idx].grid.getMap();
-
-	    mapFilter->viewMap( map );
 	}
     }
+
+    if( updated )
+	updateViewFilter();
 }
 
 

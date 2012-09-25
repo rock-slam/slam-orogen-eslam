@@ -59,6 +59,7 @@ namespace eslam {
 
 	/// update mainly debug information and the state of the filter
 	void updateFilterInfo( const base::Time& ts, const odometry::BodyContactState& bs, base::Affine3d& centroid, bool updated );
+	void updateViewFilter();
 
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
