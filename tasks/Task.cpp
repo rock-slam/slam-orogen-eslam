@@ -97,7 +97,7 @@ base::samples::RigidBodyState Task::cloneMap()
     return pose;
 }
 
-void Task::orientation_samplesTransformerCallback(const base::Time &ts, const ::base::samples::RigidBodyState &orientation_samples_sample)
+void Task::body2OdometryTransformerCallback(const base::Time& ts)
 {
     Eigen::Affine3d body2odometry;
     if( !_body2odometry.get( ts, body2odometry ) )
@@ -310,6 +310,9 @@ bool Task::configureHook()
 	env = boost::shared_ptr<envire::Environment>( new envire::Environment() );
 	doMapping = true;
     }
+
+    //register callback on new odometry readings
+    _body2odometry.registerUpdateCallback(boost::bind(&Task::body2OdometryTransformerCallback, this, _1));
 
     return TaskBase::configureHook();
 }

@@ -82,10 +82,6 @@ task_context 'Task' do
 	needs_reliable_connection.
 	doc 'timestamped samples providing the configuration state of the robot.'
 
-    input_port('orientation_samples', '/base/samples/RigidBodyState').
-	needs_reliable_connection.
-	doc 'timestamped samples providing the orientation of the robot.'
-
     input_port('reference_pose', '/base/samples/RigidBodyState').
 	needs_reliable_connection.
 	doc 'you can provide a reference pose here for debug purposes.'
@@ -125,7 +121,6 @@ task_context 'Task' do
 	transformation("lcamera", "body")
 	transformation("body", "odometry")
 
-	align_port("orientation_samples", 0.01) 
 	align_port("scan_samples", 0.02) 
 	align_port("terrain_classification_frames", 0.1)
 	align_port("terrain_classification_wheel", 0.0)
@@ -133,7 +128,7 @@ task_context 'Task' do
 	align_port("bodystate_samples", 0.01)
     end
 
-    port_driven "orientation_samples"
+    port_driven "dynamic_transformations"
 end
 
 deployment "eslam_test" do
