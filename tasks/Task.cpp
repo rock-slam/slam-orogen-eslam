@@ -7,6 +7,8 @@
 #include <envire/tools/ExpectationMaximization.hpp>
 #include <envire/tools/GaussianMixture.hpp>
 
+#include <base/logging.h>
+
 using namespace eslam;
 
 Task::Task(std::string const& name)
@@ -325,7 +327,7 @@ bool Task::configureHook()
     useShared = false;
     if( !_environment_path.value().empty() )
     {
-	std::cout << "loading environment: " << _environment_path.value() << std::endl;
+	LOG_INFO_S << "loading environment: " << _environment_path.value() << std::endl;
 	env = boost::shared_ptr<envire::Environment>( envire::Environment::unserialize( _environment_path.value() ) );
 	doMapping = _eslam_config.get().useVisualUpdate;
 	useShared = true;
@@ -359,10 +361,10 @@ bool Task::startHook()
     
     // init the filter
     base::Pose pose( _start_pose.value().position, _start_pose.value().orientation );
-    std::cerr << "starting at position " << pose.position.transpose() << std::endl;
+    LOG_INFO_S << "starting at position " << pose.position.transpose() << std::endl;
     filter->init( env.get(), pose, useShared, _hash_config.value() );
 
-    std::cerr << "initialized" << std::endl;
+    LOG_INFO_S << "initialized" << std::endl;
 
     // reset output counter
     outputCounter = 0;
