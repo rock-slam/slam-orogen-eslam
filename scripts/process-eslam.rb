@@ -5,7 +5,7 @@ require 'vizkit'
 include Orocos
 
 class Eslam
-    attr_accessor :env_dir, :log_dir, :eslam_config
+    attr_accessor :env_dir, :log_dir, :eslam_config, :seed
 
     def initialize
 	Bundles.initialize unless Orocos.initialized?
@@ -26,7 +26,7 @@ class Eslam
     end
 
     def from_logs( logs )
-	@log = Orocos::Log::Replay.open( logs )
+	@log = Orocos::Log::Replay.open( logs, {:multifile => :last} )
 
 	# assume asguard simulation for now...
 	# make more generic in the future for other logs
@@ -45,10 +45,10 @@ class Eslam
 	    Bundles.transformer.load_conf(Bundles.find_file('config', 'transforms_simulator_scripts.rb'))
 
 	    # setup logs in nameservice for transformer setup to work
-	    ns = Orocos::Local::NameService.new
-	    ns.register( @log.contact_odometry, "odometry" )
-	    ns.register( @log.asguard_simulation, "asguard_simulation" )
-	    Orocos.name_service << ns
+	    @ns = Orocos::Local::NameService.new
+	    @ns.register( @log.contact_odometry, "odometry" )
+	    @ns.register( @log.asguard_simulation, "asguard_simulation" )
+	    Orocos.name_service << @ns
 	else
 	end
     end
@@ -67,9 +67,10 @@ class Eslam
 	end
     end
 
-    def run
-	Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil do |p|
+    def run &block
+	Bundles.run 'eslam::Task' => 'eslam', :valgrind => false, :output => nil, :wait => 1000 do |p|
 	    eslam = Bundles.get('eslam')
+	    raise "Could not get eslam process." if eslam.nil?
 
 	    # connect task to data sources
 	    @laser_samples.connect_to( eslam.scan_samples, :type => :buffer, :size => 1000 ) if @laser_samples
@@ -79,6 +80,17 @@ class Eslam
 
 	    # configure the eslam module
 	    configure eslam
+	    if block_given?
+		yield eslam
+	    end
+	    if @seed
+		eslam.eslam_config do |c|
+		    c.seed = @seed
+		end
+		eslam.odometry_config do |c|
+		    c.seed = @seed
+		end
+	    end
 
 	    Bundles.transformer.setup( eslam )
 
@@ -122,9 +134,22 @@ class Eslam
 		Vizkit.exec
 	    else
 		Orocos.log_all_ports( (@log_dir && {:log_dir => @log_dir}) || {} )
-		log.run
+		
+		eslam.transformer_status_period = 0.1
+		status_reader = eslam.transformer_stream_aligner_status.reader 
+
+		@log.time_sync do |time,_,_|
+		    status = status_reader.read_new
+		    (status && (time - status.current_time > 0.5)) ? 0.1 : 0
+		end
+
+		@log.run true
 	    end
 	end
+
+	# close the log replay
+	@log.close
+	Orocos.name_service.delete @ns
     end
 end
 
