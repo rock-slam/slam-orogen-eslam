@@ -9,12 +9,11 @@
   </copyright>
   <license>LGPL v2 or later</license>
 
-  <depend package="asguard/orogen/terrain_estimator" />
+  <depend package="slam/orogen/terrain_estimator" />
   <depend package="drivers/orogen/transformer" />
   <depend package="slam/orogen/envire" />
   <depend package="base/types"/>
-  <depend package="asguard/eslam"/>
-  <depend package="asguard/orogen/asguard"/>
+  <depend package="slam/eslam"/>
   <depend package="slam/envire"/>
   <depend package="slam/orogen/envire"/>
   <depend package="gui/vizkit"/>
