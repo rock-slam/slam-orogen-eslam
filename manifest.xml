@@ -12,6 +12,7 @@
   <depend package="slam/orogen/terrain_estimator" />
   <depend package="drivers/orogen/transformer" />
   <depend package="slam/orogen/envire" />
+  <depend package="slam/orogen/odometry" />
   <depend package="base/types"/>
   <depend package="slam/eslam"/>
   <depend package="slam/envire"/>
