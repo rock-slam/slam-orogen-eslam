@@ -17,7 +17,7 @@
   <depend package="slam/eslam"/>
   <depend package="slam/envire"/>
   <depend package="slam/orogen/envire"/>
-  <depend package="gui/vizkit"/>
+  <depend package="gui/vizkit3d"/>
   <depend package="image_processing/orogen/stereo"/>
   <tags>needs_opt</tags>
 </package>

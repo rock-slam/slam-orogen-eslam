@@ -379,7 +379,7 @@ void Task::updateHook()
 	// register the binary event dispatcher, 
 	// which will write envire data to a port
 	orocosEmitter = new envire::OrocosEmitter( _envire_data );
-	mapFilter = new vizkit::MapVizEventFilter();
+	mapFilter = new vizkit3d::MapVizEventFilter();
 	orocosEmitter->setFilter( mapFilter );
 	orocosEmitter->useContextUpdates( env.get() );
 	orocosEmitter->useEventQueue( true );

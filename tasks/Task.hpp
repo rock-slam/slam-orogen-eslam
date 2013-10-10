@@ -6,12 +6,12 @@
 #include <boost/shared_ptr.hpp>
 #include <eslam/EmbodiedSlamFilter.hpp>
 #include <envire/Core.hpp>
-#include <vizkit/MapVizEventFilter.hpp>
+#include <vizkit3d/MapVizEventFilter.hpp>
 
 #include <aggregator/PullStreamAligner.hpp>
 
-#include <vizkit/EslamWidget.hpp>
-#include <vizkit/QtThreadedWidget.hpp>
+#include <vizkit3d/EslamWidget.hpp>
+#include <vizkit3d/QtThreadedWidget.hpp>
 #include <envire/Orocos.hpp>
 
 namespace eslam {
@@ -38,11 +38,11 @@ namespace eslam {
 	size_t outputCounter;
 
 	envire::OrocosEmitter* orocosEmitter;
-	vizkit::MapVizEventFilter* mapFilter;
+	vizkit3d::MapVizEventFilter* mapFilter;
 	base::Time lastEnvireDataUpdate;
 	base::Time lastMapUpdate;
 
-	QtThreadedWidget<vizkit::EslamWidget> viz;
+	QtThreadedWidget<vizkit3d::EslamWidget> viz;
 
         virtual ::base::samples::RigidBodyState cloneMap();
 	// transformer callbacks
